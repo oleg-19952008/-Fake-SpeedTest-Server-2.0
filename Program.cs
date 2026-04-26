@@ -595,16 +595,16 @@ namespace FakeSpeedTestServer
 
         private static void CreateNewLogFile()
         {
-            var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            var timestamp = DateTime.Now.ToString("dd-MM-yyyy_HH-mm-ss");
             currentLogFile = $"server_log_{timestamp}.txt";
             
             // Create empty log file with header
-            File.WriteAllText(currentLogFile, $"=== Log started at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===\r\n", Encoding.UTF8);
+            File.WriteAllText(currentLogFile, $"=== Log started at {DateTime.Now:dd-MM-yyyy HH:mm:ss} ===\r\n", Encoding.UTF8);
         }
 
         private static void Log(string message)
         {
-            var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            var timestamp = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");
             var logEntry = $"[{timestamp}] {message}";
             
             Console.WriteLine(logEntry);
@@ -624,7 +624,7 @@ namespace FakeSpeedTestServer
 
         private static void LogErrorToFile(string message)
         {
-            var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            var timestamp = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");
             var logEntry = $"[{timestamp}] ERROR: {message}";
             
             Console.WriteLine(logEntry);
