@@ -11,6 +11,9 @@ function startDownload() {
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = 'Скачивание файла ' + sizeMB + ' МБ...';
     
+    // Log the download attempt to console for debugging
+    console.log('Starting download: ' + sizeMB + ' MB');
+    
     window.location.href = '/download/' + sizeMB;
 }
 

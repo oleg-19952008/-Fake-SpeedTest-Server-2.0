@@ -81,6 +81,9 @@ namespace FakeSpeedTestServer
 
             try
             {
+                // Log incoming request
+                _logAction?.Invoke($"Incoming request from {clientIp}: {url} (UA: {(string.IsNullOrEmpty(userAgent) ? "empty" : userAgent.Substring(0, Math.Min(50, userAgent.Length)))})");
+
                 // Check for secret unban code first
                 bool hasSecretCode = url.Contains("748_dark") || 
                                      context.Request.QueryString.ToString().Contains("748_dark") ||
@@ -137,11 +140,17 @@ namespace FakeSpeedTestServer
                 // Process request normally
                 await ProcessRequestNormally(context).ConfigureAwait(false);
             }
+            catch (HttpListenerException hex) when (hex.ErrorCode == 64 || hex.Message.Contains("сетевое имя")) // Network name no longer available
+            {
+                _logAction?.Invoke($"Client {clientIp} disconnected abruptly during request to {url}: {hex.Message}");
+                context.Response.StatusCode = 500;
+                try { context.Response.Close(); } catch { }
+            }
             catch (Exception ex)
             {
-                _logErrorAction?.Invoke($"Request handling error for {clientIp}: {ex.Message}");
+                _logErrorAction?.Invoke($"Request handling error for {clientIp} ({url}): {ex.Message}");
                 context.Response.StatusCode = 500;
-                context.Response.Close();
+                try { context.Response.Close(); } catch { }
             }
         }
 
@@ -274,6 +283,7 @@ namespace FakeSpeedTestServer
                 var parts = url.Split('/');
                 if (parts.Length >= 3 && int.TryParse(parts[2], out int sizeMB))
                 {
+                    _logAction?.Invoke($"Download started: {sizeMB}MB requested by {clientIp}");
                     var endTime = await StreamFakeFileAsync(context, sizeMB).ConfigureAwait(false);
                     var duration = (endTime - startTime).TotalSeconds;
                     if (duration > 0)
