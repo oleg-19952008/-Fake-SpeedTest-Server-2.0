@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake SpeedTest Server</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Fake SpeedTest Server</h1>
+    <p>Выберите размер файла для тестирования скорости:</p>
+    <ul class="file-list">
+        <li><a href="/download/100" onclick="startTest(100)">100 МБ</a></li>
+        <li><a href="/download/200" onclick="startTest(200)">200 МБ</a></li>
+        <li><a href="/download/500" onclick="startTest(500)">500 МБ</a></li>
+        <li><a href="/download/1000" onclick="startTest(1000)">1000 МБ (1 ГБ)</a></li>
+    </ul>
+    <div id="result"></div>
+    <div id="browserInfo">
+        <h3>Информация о браузере:</h3>
+        <p id="infoText">Загрузка...</p>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -31,7 +31,9 @@ namespace FakeSpeedTestServer
             "/",
             "/favicon.ico",
             "/updateBrowserInfo",
-            "/748_dark"
+            "/748_dark",
+            "/style.css",
+            "/script.js"
         };
 
         // Ban manager
@@ -357,6 +359,14 @@ namespace FakeSpeedTestServer
                 context.Response.StatusCode = 200;
                 context.Response.Close();
             }
+            else if (url == "/style.css")
+            {
+                await ServeStaticFile(context, "style.css", "text/css").ConfigureAwait(false);
+            }
+            else if (url == "/script.js")
+            {
+                await ServeStaticFile(context, "script.js", "application/javascript").ConfigureAwait(false);
+            }
             else if (url.StartsWith("/download/", StringComparison.OrdinalIgnoreCase))
             {
                 var parts = url.Split('/');
@@ -424,75 +434,42 @@ namespace FakeSpeedTestServer
             return DateTime.UtcNow;
         }
 
-        private static async Task ServeHomePage(HttpListenerContext context)
+        private static async Task ServeStaticFile(HttpListenerContext context, string fileName, string contentType)
         {
-            var html = @"<!DOCTYPE html>
-<html lang=""ru"">
-<head>
-    <meta charset=""UTF-8"">
-    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
-    <title>Fake SpeedTest Server</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
-        h1 { color: #333; }
-        .file-list { list-style: none; padding: 0; }
-        .file-list li { margin: 10px 0; }
-        .file-list a { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; }
-        .file-list a:hover { background: #0056b3; }
-        #result { margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 5px; display: none; }
-        #browserInfo { margin-top: 20px; padding: 15px; background: #e8f4e8; border-radius: 5px; }
-    </style>
-</head>
-<body>
-    <h1>Fake SpeedTest Server</h1>
-    <p>Выберите размер файла для тестирования скорости:</p>
-    <ul class=""file-list"">
-        <li><a href=""/download/100"" onclick=""startTest(100)"">100 МБ</a></li>
-        <li><a href=""/download/200"" onclick=""startTest(200)"">200 МБ</a></li>
-        <li><a href=""/download/500"" onclick=""startTest(500)"">500 МБ</a></li>
-        <li><a href=""/download/1000"" onclick=""startTest(1000)"">1000 МБ (1 ГБ)</a></li>
-    </ul>
-    <div id=""result""></div>
-    <div id=""browserInfo"">
-        <h3>Информация о браузере:</h3>
-        <p id=""infoText"">Загрузка...</p>
-    </div>
-    <script>
-        function startTest(sizeMB) {
-            var startTime = performance.now();
-            var link = event.target;
-            var resultDiv = document.getElementById('result');
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = 'Тестирование...';
+            if (!File.Exists(fileName))
+            {
+                LogErrorToFile($"{fileName} not found");
+                context.Response.StatusCode = 404;
+                context.Response.Close();
+                return;
+            }
+
+            var response = context.Response;
+            response.ContentType = contentType;
+            var fileContent = File.ReadAllText(fileName);
+            var buffer = Encoding.UTF8.GetBytes(fileContent);
+            response.ContentLength64 = buffer.Length;
             
-            // Simulate test completion after download starts
-            setTimeout(function() {
-                var endTime = performance.now();
-                var duration = (endTime - startTime) / 1000;
-                var speedMbps = (sizeMB * 8) / duration / 1000000;
-                resultDiv.innerHTML = '<strong>Результат:</strong> Файл ' + sizeMB + ' МБ<br>' +
-                                      '<strong>Время:</strong> ' + duration.toFixed(2) + ' сек<br>' +
-                                      '<strong>Скорость:</strong> ' + speedMbps.toFixed(2) + ' Mbit/s';
-            }, 1000);
+            using (var output = response.OutputStream)
+            {
+                await output.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+            }
         }
 
-        // Get browser info using Client Hints
-        if (navigator.userAgentData) {
-            navigator.userAgentData.getHighEntropyValues(['platform', 'platformVersion', 'architecture', 'model', 'uaFullVersion']).then(function(info) {
-                document.getElementById('infoText').innerHTML = 
-                    '<strong>Платформа:</strong> ' + (info.platform || navigator.platform) + '<br>' +
-                    '<strong>Браузер:</strong> ' + navigator.userAgentData.brand + ' ' + (info.uaFullVersion || '') + '<br>' +
-                    '<strong>Архитектура:</strong> ' + (info.architecture || 'N/A') + '<br>' +
-                    '<strong>Версия ОС:</strong> ' + (info.platformVersion || 'N/A');
-            });
-        } else {
-            document.getElementById('infoText').innerHTML = 
-                '<strong>User-Agent:</strong> ' + navigator.userAgent + '<br>' +
-                '<strong>Платформа:</strong> ' + navigator.platform;
-        }
-    </script>
-</body>
-</html>";
+        private static async Task ServeHomePage(HttpListenerContext context)
+        {
+            var filePath = "index.html";
+            string html;
+            
+            if (!File.Exists(filePath))
+            {
+                LogErrorToFile($"index.html not found");
+                context.Response.StatusCode = 500;
+                context.Response.Close();
+                return;
+            }
+            
+            html = File.ReadAllText(filePath);
 
             var response = context.Response;
             response.ContentType = "text/html; charset=utf-8";
