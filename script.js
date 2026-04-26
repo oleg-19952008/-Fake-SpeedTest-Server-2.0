@@ -1,19 +1,23 @@
-function startTest(sizeMB) {
-    var startTime = performance.now();
-    var link = event.target;
+function startDownload() {
+    var sizeInput = document.getElementById('fileSize');
+    var sizeMB = parseInt(sizeInput.value);
+    
+    if (sizeMB < 1 || sizeMB > 10240) {
+        alert('Размер файла должен быть от 1 до 10240 МБ');
+        return;
+    }
+    
     var resultDiv = document.getElementById('result');
     resultDiv.style.display = 'block';
-    resultDiv.innerHTML = 'Тестирование...';
+    resultDiv.innerHTML = 'Скачивание файла ' + sizeMB + ' МБ...';
     
-    // Simulate test completion after download starts
-    setTimeout(function() {
-        var endTime = performance.now();
-        var duration = (endTime - startTime) / 1000;
-        var speedMbps = (sizeMB * 8) / duration / 1000000;
-        resultDiv.innerHTML = '<strong>Результат:</strong> Файл ' + sizeMB + ' МБ<br>' +
-                              '<strong>Время:</strong> ' + duration.toFixed(2) + ' сек<br>' +
-                              '<strong>Скорость:</strong> ' + speedMbps.toFixed(2) + ' Mbit/s';
-    }, 1000);
+    window.location.href = '/download/' + sizeMB;
+}
+
+function setAndDownload(sizeMB) {
+    var sizeInput = document.getElementById('fileSize');
+    sizeInput.value = sizeMB;
+    startDownload();
 }
 
 // Get browser info using Client Hints

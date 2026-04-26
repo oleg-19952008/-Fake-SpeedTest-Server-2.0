@@ -8,13 +8,25 @@
 </head>
 <body>
     <h1>Fake SpeedTest Server</h1>
-    <p>Выберите размер файла для тестирования скорости:</p>
-    <ul class="file-list">
-        <li><a href="/download/100" onclick="startTest(100)">100 МБ</a></li>
-        <li><a href="/download/200" onclick="startTest(200)">200 МБ</a></li>
-        <li><a href="/download/500" onclick="startTest(500)">500 МБ</a></li>
-        <li><a href="/download/1000" onclick="startTest(1000)">1000 МБ (1 ГБ)</a></li>
-    </ul>
+    <p>Выберите размер файла для тестирования скорости (от 1 МБ до 10 ГБ):</p>
+    <div class="size-selector">
+        <label for="fileSize">Размер файла (МБ): </label>
+        <input type="number" id="fileSize" min="1" max="10240" value="100">
+        <button onclick="startDownload()">Скачать</button>
+    </div>
+    <div class="quick-sizes">
+        <p>Быстрый выбор:</p>
+        <ul class="file-list">
+            <li><a href="#" onclick="setAndDownload(10)">10 МБ</a></li>
+            <li><a href="#" onclick="setAndDownload(50)">50 МБ</a></li>
+            <li><a href="#" onclick="setAndDownload(100)">100 МБ</a></li>
+            <li><a href="#" onclick="setAndDownload(500)">500 МБ</a></li>
+            <li><a href="#" onclick="setAndDownload(1000)">1 ГБ</a></li>
+            <li><a href="#" onclick="setAndDownload(2048)">2 ГБ</a></li>
+            <li><a href="#" onclick="setAndDownload(5120)">5 ГБ</a></li>
+            <li><a href="#" onclick="setAndDownload(10240)">10 ГБ</a></li>
+        </ul>
+    </div>
     <div id="result"></div>
     <div id="browserInfo">
         <h3>Информация о браузере:</h3>
