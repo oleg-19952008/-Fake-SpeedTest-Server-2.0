@@ -1,0 +1,1 @@
+Nothing should be ignored in this case, as the changes consist only of source code files (.cs files) and a README.md file, with no build artifacts, dependencies, or temporary files present.
