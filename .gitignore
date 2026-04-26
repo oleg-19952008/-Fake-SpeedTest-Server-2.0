@@ -1,1 +1,36 @@
-Nothing should be ignored in this case, as the changes consist only of source code files (.cs files) and a README.md file, with no build artifacts, dependencies, or temporary files present.
+```gitignore
+# Build artifacts
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+*.userprefs
+
+# Dependencies
+packages/
+node_modules/
+venv/
+.venv/
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+TestResults/
+```

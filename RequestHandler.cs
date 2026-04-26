@@ -109,8 +109,8 @@ namespace FakeSpeedTestServer
                 // Check for suspicious request
                 if (IsSuspiciousRequest(context))
                 {
-                    _banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 200000)); // 200,000 years
-                    _logAction?.Invoke($"Banned suspicious IP: {clientIp} - Perma-ban");
+                    _banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 10)); // 10 years
+                    _logAction?.Invoke($"Banned suspicious IP: {clientIp} - 10 year ban");
                     context.Response.StatusCode = 403;
                     context.Response.Close();
                     return;
@@ -125,8 +125,8 @@ namespace FakeSpeedTestServer
                         tracking.BadRequestCount++;
                         if (tracking.BadRequestCount >= 1)
                         {
-                            _banManager.BanClient(clientIp, TimeSpan.FromMinutes(2));
-                            _logAction?.Invoke($"Banned IP {clientIp} for 2 minutes - Unknown path: {url}");
+                            _banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 10)); // 10 years
+                            _logAction?.Invoke($"Banned IP {clientIp} for 10 years - Unknown path: {url}");
                         }
                     }
                     context.Response.StatusCode = 403;
@@ -221,6 +221,14 @@ namespace FakeSpeedTestServer
             var url = context.Request.Url.AbsolutePath;
             var clientIp = context.Request.RemoteEndPoint.Address.ToString();
             var startTime = DateTime.UtcNow;
+
+            // Track connection
+            var tracking = _banManager.GetOrCreateClientTracking(clientIp);
+            lock (tracking)
+            {
+                tracking.ConnectionCount++;
+                tracking.LastConnectionTime = DateTime.Now;
+            }
 
             // Add random header
             string randomHeader;

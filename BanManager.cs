@@ -69,6 +69,25 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
+        /// Gets the total number of connections in the last 24 hours.
+        /// Used for displaying connection statistics in the window title.
+        /// </summary>
+        /// <returns>Total connection count for the last 24 hours</returns>
+        public int GetConnectionsLast24Hours()
+        {
+            var cutoff = DateTime.Now.AddHours(-24);
+            int totalCount = 0;
+            foreach (var kvp in _clientTracking.ToList())
+            {
+                if (kvp.Value.LastConnectionTime > cutoff)
+                {
+                    totalCount += kvp.Value.ConnectionCount;
+                }
+            }
+            return totalCount;
+        }
+
+        /// <summary>
         /// Removes a ban for the specified client IP.
         /// Used for secret unban code functionality.
         /// </summary>
@@ -183,5 +202,17 @@ namespace FakeSpeedTestServer
         /// Browser name extracted from user agent.
         /// </summary>
         public string ClientBrowserName { get; set; }
+        
+        /// <summary>
+        /// Total number of connections from this client.
+        /// Used for connection statistics tracking.
+        /// </summary>
+        public int ConnectionCount { get; set; }
+        
+        /// <summary>
+        /// Timestamp of the last connection from this client.
+        /// Used for 24-hour connection statistics.
+        /// </summary>
+        public DateTime LastConnectionTime { get; set; }
     }
 }
