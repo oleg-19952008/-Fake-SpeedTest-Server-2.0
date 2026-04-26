@@ -1,0 +1,15 @@
+curl
+wget
+python
+scanner
+bot
+spider
+crawler
+zgrab
+go-http-client
+internetmeasurement
+palo alto networks
+masscan
+nmap
+nikto
+sqlmap
