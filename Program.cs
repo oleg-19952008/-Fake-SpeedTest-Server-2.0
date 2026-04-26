@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
@@ -11,33 +10,20 @@ using System.Threading.Tasks;
 
 namespace FakeSpeedTestServer
 {
+    /// <summary>
+    /// Main entry point for the Fake SpeedTest Server application.
+    /// Orchestrates all server components including ban management, night mode,
+    /// request handling, logging, and configuration loading.
+    /// Version: 2.1
+    /// </summary>
     class Program
     {
-        // Night mode settings
-        private static readonly object nightModeLock = new object();
-        private static volatile bool isInSleepMode = false;
-        private static volatile bool isForceRunRequested = false;
-        private static volatile bool isNightModeEnabled = true;
-        private static int nightStartHour = 1; // 01:00
-        private static int nightEndHour = 6;   // 06:00
-
-        // File size limits (1 MB to 10240 MB = 10 GB)
-        private const int MinFileSizeMB = 1;
-        private const int MaxFileSizeMB = 10240;
-
-        // White listed paths
-        private static readonly string[] WhiteListedPaths = new string[]
-        {
-            "/",
-            "/favicon.ico",
-            "/updateBrowserInfo",
-            "/748_dark",
-            "/style.css",
-            "/script.js"
-        };
-
-        // Ban manager
+        // Server components
         private static BanManager banManager;
+        private static NightModeService nightModeService;
+        private static RequestHandler requestHandler;
+        private static CancellationTokenSource serverCts;
+        private static HttpListener listener;
 
         // Random headers
         private static List<string> randomHeaders = new List<string>();
@@ -47,18 +33,19 @@ namespace FakeSpeedTestServer
         private static HashSet<string> suspiciousUserAgents = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private static FileSystemWatcher fileWatcher;
 
-        // Server components
-        private static CancellationTokenSource serverCts;
-        private static HttpListener listener;
-
         // Log file lock
         private static readonly object logLock = new object();
         private static string currentLogFile;
 
+        /// <summary>
+        /// Main entry point of the application.
+        /// Initializes all components and starts the HTTP server.
+        /// </summary>
+        /// <param name="args">Command line arguments (not used)</param>
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
-            Console.WriteLine("=== Fake SpeedTest Server ===");
+            Console.WriteLine("=== Fake SpeedTest Server v2.1 ===");
             Console.WriteLine("Initializing...");
 
             // Initialize components
@@ -68,9 +55,19 @@ namespace FakeSpeedTestServer
             LoadRandomHeaders();
             CreateNewLogFile();
 
-            // Start night mode checker thread
-            var nightModeToken = new CancellationTokenSource();
-            Task.Run(() => CheckNightModeAsync(nightModeToken.Token));
+            // Initialize night mode service
+            nightModeService = new NightModeService(banManager, Log);
+            nightModeService.Start();
+
+            // Initialize request handler
+            requestHandler = new RequestHandler(
+                banManager,
+                nightModeService,
+                randomHeaders,
+                headerLock,
+                suspiciousUserAgents,
+                Log,
+                LogErrorToFile);
 
             // Start HTTP listener
             listener = new HttpListener();
@@ -85,42 +82,24 @@ namespace FakeSpeedTestServer
             MainLoop().GetAwaiter().GetResult();
         }
 
+        /// <summary>
+        /// Main server loop that accepts and processes incoming HTTP requests.
+        /// Handles night mode sleep states and graceful shutdown.
+        /// </summary>
         private static async Task MainLoop()
         {
             while (!serverCts.Token.IsCancellationRequested)
             {
                 // Check night mode
-                lock (nightModeLock)
+                if (nightModeService.IsInSleepMode)
                 {
-                    if (isInSleepMode && !isForceRunRequested)
-                    {
-                        Console.WriteLine("[Night Mode] Server is sleeping. Press 'Y' to force run.");
-                        
-                        // Wait for night mode to end or force run
-                        while (isInSleepMode && !isForceRunRequested)
-                        {
-                            if (Console.KeyAvailable)
-                            {
-                                var key = Console.ReadKey(true);
-                                if (key.Key == ConsoleKey.Y)
-                                {
-                                    lock (nightModeLock)
-                                    {
-                                        isForceRunRequested = true;
-                                    }
-                                    Console.WriteLine("[Night Mode] Force run requested!");
-                                    break;
-                                }
-                            }
-                            await Task.Delay(1000, serverCts.Token).ConfigureAwait(false);
-                        }
-                    }
+                    await nightModeService.WaitForNightModeEndOrForceRun(serverCts);
                 }
 
                 try
                 {
                     var context = await listener.GetContextAsync().ConfigureAwait(false);
-                    _ = HandleRequestAsync(context);
+                    _ = requestHandler.HandleRequestAsync(context);
                 }
                 catch (OperationCanceledException)
                 {
@@ -135,352 +114,15 @@ namespace FakeSpeedTestServer
             listener.Stop();
             listener.Close();
             fileWatcher?.Dispose();
+            nightModeService?.Stop();
             Console.WriteLine("Server stopped.");
             Log("Server stopped");
         }
 
-        private static bool IsNightTime()
-        {
-            var now = DateTime.Now.Hour;
-            if (nightStartHour < nightEndHour)
-            {
-                return now >= nightStartHour && now < nightEndHour;
-            }
-            else
-            {
-                return now >= nightStartHour || now < nightEndHour;
-            }
-        }
-
-        private static async Task CheckNightModeAsync(CancellationToken token)
-        {
-            while (!token.IsCancellationRequested)
-            {
-                try
-                {
-                    await Task.Delay(1000, token).ConfigureAwait(false);
-
-                    if (!isNightModeEnabled)
-                        continue;
-
-                    bool isNight = IsNightTime();
-
-                    lock (nightModeLock)
-                    {
-                        if (isNight && !isInSleepMode)
-                        {
-                            isInSleepMode = true;
-                            isForceRunRequested = false;
-                            Console.WriteLine("[Night Mode] Entering sleep mode.");
-                            Log("Night mode started");
-                        }
-                        else if (!isNight && isInSleepMode)
-                        {
-                            isInSleepMode = false;
-                            isForceRunRequested = false;
-                            Console.WriteLine("[Night Mode] Exiting sleep mode.");
-                            Log("Night mode ended");
-                        }
-                    }
-
-                    // Cleanup old tracking every minute
-                    banManager.CleanupOldTracking(60);
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    LogErrorToFile($"Night mode check error: {ex.Message}");
-                }
-            }
-        }
-
-        private static async Task HandleRequestAsync(HttpListenerContext context)
-        {
-            var clientIp = context.Request.RemoteEndPoint.Address.ToString();
-            var url = context.Request.Url.AbsolutePath;
-            var userAgent = context.Request.UserAgent ?? "";
-
-            try
-            {
-                // Check for secret unban code first
-                bool hasSecretCode = url.Contains("748_dark") || 
-                                     context.Request.QueryString.ToString().Contains("748_dark") ||
-                                     userAgent.Contains("748_dark");
-
-                if (hasSecretCode)
-                {
-                    banManager.UnbanClient(clientIp);
-                    Log($"Secret unban code used by {clientIp}");
-                    
-                    context.Response.StatusCode = 302;
-                    context.Response.RedirectLocation = "/";
-                    context.Response.Close();
-                    return;
-                }
-
-                // Check if IP is banned
-                if (banManager.IsBanned(clientIp))
-                {
-                    Log($"Blocked banned IP: {clientIp}");
-                    context.Response.StatusCode = 403;
-                    context.Response.Close();
-                    return;
-                }
-
-                // Check for suspicious request
-                if (IsSuspiciousRequest(context))
-                {
-                    banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 200000)); // 200,000 years
-                    Log($"Banned suspicious IP: {clientIp} - Perma-ban");
-                    context.Response.StatusCode = 403;
-                    context.Response.Close();
-                    return;
-                }
-
-                // Check white list
-                if (!IsWhiteListed(url))
-                {
-                    var tracking = banManager.GetOrCreateClientTracking(clientIp);
-                    lock (tracking)
-                    {
-                        tracking.BadRequestCount++;
-                        if (tracking.BadRequestCount >= 1)
-                        {
-                            banManager.BanClient(clientIp, TimeSpan.FromMinutes(2));
-                            Log($"Banned IP {clientIp} for 2 minutes - Unknown path: {url}");
-                        }
-                    }
-                    context.Response.StatusCode = 403;
-                    context.Response.Close();
-                    return;
-                }
-
-                // Process request normally
-                await ProcessRequestNormally(context).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                LogErrorToFile($"Request handling error for {clientIp}: {ex.Message}");
-                context.Response.StatusCode = 500;
-                context.Response.Close();
-            }
-        }
-
-        private static bool IsSuspiciousRequest(HttpListenerContext context)
-        {
-            var userAgent = context.Request.UserAgent ?? "";
-            var acceptHeader = context.Request.Headers["Accept"] ?? "";
-            var acceptLanguage = context.Request.Headers["Accept-Language"] ?? "";
-
-            // Empty User-Agent
-            if (string.IsNullOrEmpty(userAgent))
-            {
-                return true;
-            }
-
-            // Check for suspicious keywords
-            foreach (var keyword in suspiciousUserAgents)
-            {
-                if (userAgent.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    return true;
-                }
-            }
-
-            // Accept: */* without Accept-Language
-            if (acceptHeader == "*/*" && string.IsNullOrEmpty(acceptLanguage))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        private static bool IsWhiteListed(string url)
-        {
-            // Exact matches
-            foreach (var path in WhiteListedPaths)
-            {
-                if (url == path)
-                    return true;
-            }
-
-            // Download paths: /download/N where N is 1-10240
-            if (url.StartsWith("/download/", StringComparison.OrdinalIgnoreCase))
-            {
-                var parts = url.Split('/');
-                if (parts.Length >= 3 && int.TryParse(parts[2], out int size))
-                {
-                    if (size >= MinFileSizeMB && size <= MaxFileSizeMB)
-                        return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static async Task ProcessRequestNormally(HttpListenerContext context)
-        {
-            var url = context.Request.Url.AbsolutePath;
-            var clientIp = context.Request.RemoteEndPoint.Address.ToString();
-            var startTime = DateTime.UtcNow;
-
-            // Add random header
-            string randomHeader;
-            lock (headerLock)
-            {
-                if (randomHeaders.Count > 0)
-                {
-                    var rnd = new Random();
-                    randomHeader = randomHeaders[rnd.Next(randomHeaders.Count)];
-                }
-                else
-                {
-                    randomHeader = "Unknown";
-                }
-            }
-            context.Response.Headers.Add("X-Powered-By", randomHeader);
-
-            // Handle specific paths
-            if (url == "/" || url == "/index.html")
-            {
-                await ServeHomePage(context).ConfigureAwait(false);
-            }
-            else if (url == "/favicon.ico")
-            {
-                context.Response.StatusCode = 404;
-                context.Response.Close();
-            }
-            else if (url == "/updateBrowserInfo")
-            {
-                context.Response.StatusCode = 200;
-                context.Response.Close();
-            }
-            else if (url == "/style.css")
-            {
-                await ServeStaticFile(context, "style.css", "text/css").ConfigureAwait(false);
-            }
-            else if (url == "/script.js")
-            {
-                await ServeStaticFile(context, "script.js", "application/javascript").ConfigureAwait(false);
-            }
-            else if (url.StartsWith("/download/", StringComparison.OrdinalIgnoreCase))
-            {
-                var parts = url.Split('/');
-                if (parts.Length >= 3 && int.TryParse(parts[2], out int sizeMB))
-                {
-                    var endTime = await StreamFakeFileAsync(context, sizeMB).ConfigureAwait(false);
-                    var duration = (endTime - startTime).TotalSeconds;
-                    if (duration > 0)
-                    {
-                        var speedMbps = (sizeMB * 8) / duration / 1000000; // Mbit/s
-                        Log($"Download completed: {sizeMB}MB to {clientIp} in {duration:F2}s ({speedMbps:F2} Mbit/s)");
-                    }
-                }
-                else
-                {
-                    context.Response.StatusCode = 400;
-                    context.Response.Close();
-                }
-            }
-            else
-            {
-                context.Response.StatusCode = 404;
-                context.Response.Close();
-            }
-        }
-
-        private static async Task<DateTime> StreamFakeFileAsync(HttpListenerContext context, int sizeMB)
-        {
-            var response = context.Response;
-            var fileName = $"fake_file_{sizeMB}MB.dat";
-            
-            response.ContentType = "application/octet-stream";
-            response.Headers.Add("Content-Disposition", $"attachment; filename=\"{fileName}\"");
-            
-            long totalBytes = (long)sizeMB * 1024 * 1024;
-            response.ContentLength64 = totalBytes;
-
-            var marker = Encoding.UTF8.GetBytes("ТЕСТ");
-            var buffer = new byte[1024 * 1024]; // 1 MB buffer
-
-            using (var output = response.OutputStream)
-            {
-                // Write start marker
-                await output.WriteAsync(marker, 0, marker.Length).ConfigureAwait(false);
-                
-                // Calculate remaining bytes after markers
-                long remainingBytes = totalBytes - (marker.Length * 2);
-                
-                // Write zero-filled data
-                while (remainingBytes > buffer.Length)
-                {
-                    await output.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-                    remainingBytes -= buffer.Length;
-                }
-                
-                if (remainingBytes > 0)
-                {
-                    await output.WriteAsync(buffer, 0, (int)remainingBytes).ConfigureAwait(false);
-                }
-                
-                // Write end marker
-                await output.WriteAsync(marker, 0, marker.Length).ConfigureAwait(false);
-            }
-
-            return DateTime.UtcNow;
-        }
-
-        private static async Task ServeStaticFile(HttpListenerContext context, string fileName, string contentType)
-        {
-            if (!File.Exists(fileName))
-            {
-                LogErrorToFile($"{fileName} not found");
-                context.Response.StatusCode = 404;
-                context.Response.Close();
-                return;
-            }
-
-            var response = context.Response;
-            response.ContentType = contentType;
-            var fileContent = File.ReadAllText(fileName);
-            var buffer = Encoding.UTF8.GetBytes(fileContent);
-            response.ContentLength64 = buffer.Length;
-            
-            using (var output = response.OutputStream)
-            {
-                await output.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-            }
-        }
-
-        private static async Task ServeHomePage(HttpListenerContext context)
-        {
-            var filePath = "index.html";
-            string html;
-            
-            if (!File.Exists(filePath))
-            {
-                LogErrorToFile($"index.html not found");
-                context.Response.StatusCode = 500;
-                context.Response.Close();
-                return;
-            }
-            
-            html = File.ReadAllText(filePath);
-
-            var response = context.Response;
-            response.ContentType = "text/html; charset=utf-8";
-            var buffer = Encoding.UTF8.GetBytes(html);
-            response.ContentLength64 = buffer.Length;
-            using (var output = response.OutputStream)
-            {
-                await output.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-            }
-        }
-
+        /// <summary>
+        /// Loads suspicious user agents from file or uses defaults.
+        /// Monitored by FileSystemWatcher for hot reload capability.
+        /// </summary>
         private static void LoadSuspiciousUserAgents()
         {
             var filePath = "suspicious_agents.txt";
@@ -516,6 +158,10 @@ namespace FakeSpeedTestServer
             }
         }
 
+        /// <summary>
+        /// Initializes FileSystemWatcher to monitor suspicious_agents.txt for changes.
+        /// Automatically reloads the list when the file is modified.
+        /// </summary>
         private static void InitializeFileWatcher()
         {
             var filePath = Path.GetFullPath("suspicious_agents.txt");
@@ -538,6 +184,9 @@ namespace FakeSpeedTestServer
             Console.WriteLine($"Watching {filePath} for changes.");
         }
 
+        /// <summary>
+        /// Loads random headers from file for X-Powered-By response header randomization.
+        /// </summary>
         private static void LoadRandomHeaders()
         {
             var filePath = "random_headers.txt";
@@ -570,6 +219,10 @@ namespace FakeSpeedTestServer
             }
         }
 
+        /// <summary>
+        /// Creates a new log file with timestamp in dd-MM-yyyy format.
+        /// Called at server startup to begin logging session.
+        /// </summary>
         private static void CreateNewLogFile()
         {
             var timestamp = DateTime.Now.ToString("dd-MM-yyyy_HH-mm-ss");
@@ -579,6 +232,11 @@ namespace FakeSpeedTestServer
             File.WriteAllText(currentLogFile, $"=== Log started at {DateTime.Now:dd-MM-yyyy HH:mm:ss} ===\r\n", Encoding.UTF8);
         }
 
+        /// <summary>
+        /// Logs an informational message to console and current log file.
+        /// Thread-safe using lock on logLock object.
+        /// </summary>
+        /// <param name="message">Message to log</param>
         private static void Log(string message)
         {
             var timestamp = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");
@@ -599,6 +257,11 @@ namespace FakeSpeedTestServer
             }
         }
 
+        /// <summary>
+        /// Logs an error message to console and current log file.
+        /// Thread-safe using lock on logLock object.
+        /// </summary>
+        /// <param name="message">Error message to log</param>
         private static void LogErrorToFile(string message)
         {
             var timestamp = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");
@@ -618,121 +281,5 @@ namespace FakeSpeedTestServer
                 }
             }
         }
-    }
-
-    public class BanManager
-    {
-        private readonly string _banFile;
-        private readonly ConcurrentDictionary<string, DateTime> _bannedClients;
-        private readonly ConcurrentDictionary<string, ClientTracking> _clientTracking;
-        private readonly object _lock = new object();
-
-        public BanManager(string banFile)
-        {
-            _banFile = banFile;
-            _bannedClients = new ConcurrentDictionary<string, DateTime>();
-            _clientTracking = new ConcurrentDictionary<string, ClientTracking>();
-            LoadBans();
-        }
-
-        public bool IsBanned(string ip)
-        {
-            if (_bannedClients.TryGetValue(ip, out DateTime banExpiry))
-            {
-                if (DateTime.Now < banExpiry)
-                {
-                    return true;
-                }
-                else
-                {
-                    // Ban expired
-                    _bannedClients.TryRemove(ip, out _);
-                    SaveBans();
-                }
-            }
-            return false;
-        }
-
-        public void BanClient(string ip, TimeSpan duration)
-        {
-            var expiry = DateTime.Now.Add(duration);
-            _bannedClients[ip] = expiry;
-            SaveBans();
-        }
-
-        public void UnbanClient(string ip)
-        {
-            _bannedClients.TryRemove(ip, out _);
-            SaveBans();
-        }
-
-        public ClientTracking GetOrCreateClientTracking(string ip)
-        {
-            return _clientTracking.GetOrAdd(ip, _ => new ClientTracking());
-        }
-
-        public void CleanupOldTracking(int maxAgeMinutes)
-        {
-            var cutoff = DateTime.Now.AddMinutes(-maxAgeMinutes);
-            foreach (var kvp in _clientTracking.ToList())
-            {
-                // Simple cleanup - could be enhanced based on actual usage
-                // For now, we just ensure the dictionary doesn't grow indefinitely
-            }
-        }
-
-        private void LoadBans()
-        {
-            if (!File.Exists(_banFile))
-            {
-                return;
-            }
-
-            try
-            {
-                var lines = File.ReadAllLines(_banFile);
-                foreach (var line in lines)
-                {
-                    var parts = line.Split('|');
-                    if (parts.Length == 2 && 
-                        !string.IsNullOrEmpty(parts[0]) && 
-                        DateTime.TryParse(parts[1], out DateTime expiry))
-                    {
-                        if (DateTime.Now < expiry)
-                        {
-                            _bannedClients[parts[0]] = expiry;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading bans: {ex.Message}");
-            }
-        }
-
-        private void SaveBans()
-        {
-            try
-            {
-                var lines = _bannedClients
-                    .Where(kvp => kvp.Value > DateTime.Now)
-                    .Select(kvp => $"{kvp.Key}|{kvp.Value:yyyy-MM-dd HH:mm:ss}")
-                    .ToArray();
-                
-                File.WriteAllLines(_banFile, lines, Encoding.UTF8);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error saving bans: {ex.Message}");
-            }
-        }
-    }
-
-    public class ClientTracking
-    {
-        public int BadRequestCount { get; set; }
-        public string FullBrowserVersion { get; set; }
-        public string ClientBrowserName { get; set; }
     }
 }
