@@ -14,7 +14,7 @@ namespace FakeSpeedTestServer
     /// Main entry point for the Fake SpeedTest Server application.
     /// Orchestrates all server components including ban management, night mode,
     /// request handling, logging, and configuration loading.
-    /// Version: 2.4
+    /// Version: 2.5
     /// </summary>
     class Program
     {
@@ -24,6 +24,7 @@ namespace FakeSpeedTestServer
         private static RequestHandler requestHandler;
         private static CancellationTokenSource serverCts;
         private static HttpListener listener;
+        private static bool isShuttingDown = false;
 
         // Random headers
         private static List<string> randomHeaders = new List<string>();
@@ -48,7 +49,7 @@ namespace FakeSpeedTestServer
             Console.OutputEncoding = Encoding.GetEncoding(866);
             Console.InputEncoding = Encoding.GetEncoding(866);
             
-            Console.WriteLine("=== Фейковый сервер SpeedTest v2.4 ===");
+            Console.WriteLine("=== Фейковый сервер SpeedTest v2.5 ===");
             Console.WriteLine("Инициализация...");
 
             // Initialize components
@@ -84,9 +85,17 @@ namespace FakeSpeedTestServer
             // Обработчик Ctrl+C для корректного завершения работы
             Console.CancelKeyPress += (sender, e) =>
             {
+                if (isShuttingDown)
+                {
+                    // Принудительное завершение при повторном нажатии
+                    Environment.Exit(0);
+                    return;
+                }
+                
                 e.Cancel = true; // Отменяем стандартное завершение
+                isShuttingDown = true;
                 Console.WriteLine("\nПолучен сигнал завершения (Ctrl+C). Остановка сервера...");
-                serverCts.Cancel();
+                serverCts?.Cancel();
             };
 
             // Main loop
@@ -115,7 +124,7 @@ namespace FakeSpeedTestServer
                 {
                     int connections = banManager.GetConnectionsLast24Hours();
                     int bannedCount = banManager.GetBannedCount();
-                    Console.Title = $"Фейковый сервер SpeedTest v2.4 - Подключений (24ч): {connections} | Забанено адресов: {bannedCount}";
+                    Console.Title = $"Фейковый сервер SpeedTest v2.5 - Подключений (24ч): {connections} | Забанено адресов: {bannedCount}";
                     lastTitleUpdate = DateTime.Now;
                 }
 
