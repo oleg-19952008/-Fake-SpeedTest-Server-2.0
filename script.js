@@ -37,3 +37,16 @@ if (navigator.userAgentData) {
         '<strong>User-Agent:</strong> ' + navigator.userAgent + '<br>' +
         '<strong>Платформа:</strong> ' + navigator.platform;
 }
+
+// Get client IP address from server
+fetch('/api/client-ip')
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
+        document.getElementById('ipText').textContent = data.ip;
+    })
+    .catch(function(error) {
+        document.getElementById('ipText').textContent = 'Не удалось определить IP-адрес';
+        console.error('Ошибка получения IP:', error);
+    });

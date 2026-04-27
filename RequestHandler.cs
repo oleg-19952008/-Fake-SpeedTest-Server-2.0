@@ -35,7 +35,8 @@ namespace FakeSpeedTestServer
             "/updateBrowserInfo",
             "/748_dark",
             "/style.css",
-            "/script.js"
+            "/script.js",
+            "/api/client-ip"
         };
 
         /// <summary>
@@ -277,6 +278,17 @@ namespace FakeSpeedTestServer
             else if (url == "/script.js")
             {
                 await ServeStaticFile(context, "script.js", "application/javascript").ConfigureAwait(false);
+            }
+            else if (url == "/api/client-ip")
+            {
+                context.Response.ContentType = "application/json";
+                string jsonResponse = $"{{\"ip\": \"{clientIp}\"}}";
+                var buffer = Encoding.UTF8.GetBytes(jsonResponse);
+                context.Response.ContentLength64 = buffer.Length;
+                using (var output = context.Response.OutputStream)
+                {
+                    await output.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                }
             }
             else if (url.StartsWith("/download/", StringComparison.OrdinalIgnoreCase))
             {
