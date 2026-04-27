@@ -44,7 +44,10 @@ namespace FakeSpeedTestServer
         /// <param name="args">Command line arguments (not used)</param>
         static void Main(string[] args)
         {
-            Console.OutputEncoding = Encoding.UTF8;
+            // Устанавливаем кодировку для корректного отображения кириллицы в Windows консоли
+            Console.OutputEncoding = Encoding.GetEncoding(866);
+            Console.InputEncoding = Encoding.GetEncoding(866);
+            
             Console.WriteLine("=== Фейковый сервер SpeedTest v2.4 ===");
             Console.WriteLine("Инициализация...");
 
@@ -77,6 +80,14 @@ namespace FakeSpeedTestServer
             Log("Сервер запущен на порту 5000");
 
             serverCts = new CancellationTokenSource();
+
+            // Обработчик Ctrl+C для корректного завершения работы
+            Console.CancelKeyPress += (sender, e) =>
+            {
+                e.Cancel = true; // Отменяем стандартное завершение
+                Console.WriteLine("\nПолучен сигнал завершения (Ctrl+C). Остановка сервера...");
+                serverCts.Cancel();
+            };
 
             // Main loop
             MainLoop().GetAwaiter().GetResult();

@@ -1,3 +1,1 @@
-```
-"fake
-```
+Nothing should be ignored since only a source code file (Program.cs) was modified and no build artifacts, dependencies, or temporary files were present in the changes.
