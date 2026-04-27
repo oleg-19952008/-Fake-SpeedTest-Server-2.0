@@ -1,53 +1,55 @@
 ```csharp
-# Build results
+# Build artifacts
+*.exe
+*.dll
+*.pdb
+*.mdb
+*.exe.config
+*.dll.config
 bin/
 obj/
-out/
+Debug/
+Release/
+x64/
+x86/
+build/
 
-# User-specific files
-.vs/
-*.userprefs
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
+# Dependencies
+packages/
+node_modules/
+vendor/
 
-# Log files
+# Logs and temp files
 *.log
+*.tmp
+*.temp
+*.cache
 
-# Environment specific settings
+# Environment
 .env
 .env.local
 *.env.*
 
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Dependencies
-node_modules/
-packages/
-
-# Testing
-coverage/
-*.testresults
-*.trx
-
-# IDE specific
+# Editors
 .vscode/
 .idea/
 *.swp
 *.swo
+.DS_Store
+Thumbs.db
 
-# Temporary files
-*.tmp
-temp/
-```
+# Testing
+TestResults/
+coverage/
+htmlcov/
+.coverage
 
-Wait, I need to reconsider this. The example shows that only source/config files were modified (`BanManager.cs`, `NightModeService.cs`, `Program.cs`, `RequestHandler.cs`), which are all C# source files. According to rule #6, if the change list contains ONLY source or config files and NO build artifacts, dependencies, or temp files, I should output an EMPTY .gitignore.
-
-Since all the modified files are C# source files (.cs), this qualifies as only source files being changed.
-
-```csharp
-
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 ```

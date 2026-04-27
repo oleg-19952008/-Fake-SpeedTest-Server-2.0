@@ -88,6 +88,16 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
+        /// Gets the current number of banned client IPs.
+        /// Used for displaying ban statistics in the window title.
+        /// </summary>
+        /// <returns>Number of currently banned IPs</returns>
+        public int GetBannedCount()
+        {
+            return _bannedClients.Count(kvp => kvp.Value > DateTime.Now);
+        }
+
+        /// <summary>
         /// Removes a ban for the specified client IP.
         /// Used for secret unban code functionality.
         /// </summary>

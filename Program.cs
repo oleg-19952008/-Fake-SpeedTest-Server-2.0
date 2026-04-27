@@ -14,7 +14,7 @@ namespace FakeSpeedTestServer
     /// Main entry point for the Fake SpeedTest Server application.
     /// Orchestrates all server components including ban management, night mode,
     /// request handling, logging, and configuration loading.
-    /// Version: 2.2
+    /// Version: 2.3
     /// </summary>
     class Program
     {
@@ -45,7 +45,7 @@ namespace FakeSpeedTestServer
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
-            Console.WriteLine("=== Фейковый сервер SpeedTest v2.2 ===");
+            Console.WriteLine("=== Фейковый сервер SpeedTest v2.3 ===");
             Console.WriteLine("Инициализация...");
 
             // Initialize components
@@ -99,11 +99,12 @@ namespace FakeSpeedTestServer
                     await nightModeService.WaitForNightModeEndOrForceRun(serverCts);
                 }
 
-                // Update window title with connection count every 30 seconds
+                // Update window title with connection count and banned IPs every 30 seconds
                 if ((DateTime.Now - lastTitleUpdate).TotalSeconds >= 30)
                 {
                     int connections = banManager.GetConnectionsLast24Hours();
-                    Console.Title = $"Фейковый сервер SpeedTest v2.2 - Подключений (24ч): {connections}";
+                    int bannedCount = banManager.GetBannedCount();
+                    Console.Title = $"Фейковый сервер SpeedTest v2.3 - Подключений (24ч): {connections} | Забанено адресов: {bannedCount}";
                     lastTitleUpdate = DateTime.Now;
                 }
 
