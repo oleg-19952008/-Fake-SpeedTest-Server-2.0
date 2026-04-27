@@ -267,7 +267,27 @@ namespace FakeSpeedTestServer
             }
             else if (url == "/updateBrowserInfo")
             {
-                context.Response.StatusCode = 200;
+                // Возвращаем информацию о браузере включая IP адрес клиента
+                var clientIpAddress = context.Request.RemoteEndPoint.Address.ToString();
+                var userAgent = context.Request.UserAgent ?? "Не определен";
+                var platform = context.Request.Headers["Sec-Ch-Ua-Platform"] ?? 
+                               (userAgent.Contains("Windows") ? "Win32" : 
+                                userAgent.Contains("Mac") ? "macOS" : 
+                                userAgent.Contains("Linux") ? "Linux" : "Unknown");
+                
+                var responseInfo = $@"{{
+  ""userAgent"": ""{userAgent.Replace("\"", "\\\"")}"",
+  ""platform"": ""{platform}"",
+  ""ipAddress"": ""{clientIpAddress}""
+}}";
+                
+                var buffer = Encoding.UTF8.GetBytes(responseInfo);
+                context.Response.ContentType = "application/json; charset=utf-8";
+                context.Response.ContentLength64 = buffer.Length;
+                using (var output = context.Response.OutputStream)
+                {
+                    await output.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                }
                 context.Response.Close();
             }
             else if (url == "/style.css")

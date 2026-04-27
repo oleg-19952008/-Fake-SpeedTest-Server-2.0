@@ -23,17 +23,40 @@ function setAndDownload(sizeMB) {
     startDownload();
 }
 
-// Get browser info using Client Hints
-if (navigator.userAgentData) {
-    navigator.userAgentData.getHighEntropyValues(['platform', 'platformVersion', 'architecture', 'model', 'uaFullVersion']).then(function(info) {
-        document.getElementById('infoText').innerHTML = 
-            '<strong>Платформа:</strong> ' + (info.platform || navigator.platform) + '<br>' +
-            '<strong>Браузер:</strong> ' + navigator.userAgentData.brand + ' ' + (info.uaFullVersion || '') + '<br>' +
-            '<strong>Архитектура:</strong> ' + (info.architecture || 'N/A') + '<br>' +
-            '<strong>Версия ОС:</strong> ' + (info.platformVersion || 'N/A');
-    });
-} else {
-    document.getElementById('infoText').innerHTML = 
-        '<strong>User-Agent:</strong> ' + navigator.userAgent + '<br>' +
-        '<strong>Платформа:</strong> ' + navigator.platform;
+// Get browser info using Client Hints and fetch IP from server
+function loadBrowserInfo() {
+    // First get basic browser info
+    var basicInfo = '';
+    if (navigator.userAgentData) {
+        navigator.userAgentData.getHighEntropyValues(['platform', 'platformVersion', 'architecture', 'model', 'uaFullVersion']).then(function(info) {
+            basicInfo = 
+                '<strong>Платформа:</strong> ' + (info.platform || navigator.platform) + '<br>' +
+                '<strong>Браузер:</strong> ' + navigator.userAgentData.brand + ' ' + (info.uaFullVersion || '') + '<br>' +
+                '<strong>Архитектура:</strong> ' + (info.architecture || 'N/A') + '<br>' +
+                '<strong>Версия ОС:</strong> ' + (info.platformVersion || 'N/A');
+            updateBrowserInfoDisplay(basicInfo);
+        });
+    } else {
+        basicInfo = 
+            '<strong>User-Agent:</strong> ' + navigator.userAgent + '<br>' +
+            '<strong>Платформа:</strong> ' + navigator.platform;
+        updateBrowserInfoDisplay(basicInfo);
+    }
 }
+
+function updateBrowserInfoDisplay(basicInfo) {
+    // Fetch IP address from server
+    fetch('/updateBrowserInfo')
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            var ipInfo = data.ipAddress ? '<br><strong>IP адрес:</strong> ' + data.ipAddress : '';
+            document.getElementById('infoText').innerHTML = basicInfo + ipInfo;
+        })
+        .catch(function(error) {
+            console.error('Error fetching IP:', error);
+            // Still show basic info even if IP fetch fails
+        });
+}
+
+// Load browser info on page load
+loadBrowserInfo();
