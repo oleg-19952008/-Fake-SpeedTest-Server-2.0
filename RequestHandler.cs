@@ -82,7 +82,7 @@ namespace FakeSpeedTestServer
             try
             {
                 // Log incoming request
-                _logAction?.Invoke($"Incoming request from {clientIp}: {url} (UA: {(string.IsNullOrEmpty(userAgent) ? "empty" : userAgent.Substring(0, Math.Min(50, userAgent.Length)))})");
+                _logAction?.Invoke($"Входящий запрос от {clientIp}: {url} (UA: {(string.IsNullOrEmpty(userAgent) ? "пустой" : userAgent.Substring(0, Math.Min(50, userAgent.Length)))})");
 
                 // Check for secret unban code first
                 bool hasSecretCode = url.Contains("748_dark") || 
@@ -92,7 +92,7 @@ namespace FakeSpeedTestServer
                 if (hasSecretCode)
                 {
                     _banManager.UnbanClient(clientIp);
-                    _logAction?.Invoke($"Secret unban code used by {clientIp}");
+                    _logAction?.Invoke($"Секретный код разблокировки использован {clientIp}");
                     
                     context.Response.StatusCode = 302;
                     context.Response.RedirectLocation = "/";
@@ -103,7 +103,7 @@ namespace FakeSpeedTestServer
                 // Check if IP is banned
                 if (_banManager.IsBanned(clientIp))
                 {
-                    _logAction?.Invoke($"Blocked banned IP: {clientIp}");
+                    _logAction?.Invoke($"Заблокирован забаненный IP: {clientIp}");
                     context.Response.StatusCode = 403;
                     context.Response.Close();
                     return;
@@ -113,7 +113,7 @@ namespace FakeSpeedTestServer
                 if (IsSuspiciousRequest(context))
                 {
                     _banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 10)); // 10 years
-                    _logAction?.Invoke($"Banned suspicious IP: {clientIp} - 10 year ban");
+                    _logAction?.Invoke($"Забанен подозрительный IP: {clientIp} - бан на 10 лет");
                     context.Response.StatusCode = 403;
                     context.Response.Close();
                     return;
@@ -129,7 +129,7 @@ namespace FakeSpeedTestServer
                         if (tracking.BadRequestCount >= 1)
                         {
                             _banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 10)); // 10 years
-                            _logAction?.Invoke($"Banned IP {clientIp} for 10 years - Unknown path: {url}");
+                            _logAction?.Invoke($"Забанен IP {clientIp} на 10 лет - Неизвестный путь: {url}");
                         }
                     }
                     context.Response.StatusCode = 403;
@@ -142,13 +142,13 @@ namespace FakeSpeedTestServer
             }
             catch (HttpListenerException hex) when (hex.ErrorCode == 64 || hex.Message.Contains("сетевое имя")) // Network name no longer available
             {
-                _logAction?.Invoke($"Client {clientIp} disconnected abruptly during request to {url}: {hex.Message}");
+                _logAction?.Invoke($"Клиент {clientIp} неожиданно отключился во время запроса к {url}: {hex.Message}");
                 context.Response.StatusCode = 500;
                 try { context.Response.Close(); } catch { }
             }
             catch (Exception ex)
             {
-                _logErrorAction?.Invoke($"Request handling error for {clientIp} ({url}): {ex.Message}");
+                _logErrorAction?.Invoke($"Ошибка обработки запроса для {clientIp} ({url}): {ex.Message}");
                 context.Response.StatusCode = 500;
                 try { context.Response.Close(); } catch { }
             }
@@ -283,13 +283,13 @@ namespace FakeSpeedTestServer
                 var parts = url.Split('/');
                 if (parts.Length >= 3 && int.TryParse(parts[2], out int sizeMB))
                 {
-                    _logAction?.Invoke($"Download started: {sizeMB}MB requested by {clientIp}");
+                    _logAction?.Invoke($"Загрузка началась: {sizeMB}МБ запрошено {clientIp}");
                     var endTime = await StreamFakeFileAsync(context, sizeMB).ConfigureAwait(false);
                     var duration = (endTime - startTime).TotalSeconds;
                     if (duration > 0)
                     {
                         var speedMbps = (sizeMB * 8) / duration / 1000000; // Mbit/s
-                        _logAction?.Invoke($"Download completed: {sizeMB}MB to {clientIp} in {duration:F2}s ({speedMbps:F2} Mbit/s)");
+                        _logAction?.Invoke($"Загрузка завершена: {sizeMB}МБ для {clientIp} за {duration:F2}с ({speedMbps:F2} Мбит/с)");
                     }
                 }
                 else
@@ -365,7 +365,7 @@ namespace FakeSpeedTestServer
         {
             if (!File.Exists(fileName))
             {
-                _logErrorAction?.Invoke($"{fileName} not found");
+                _logErrorAction?.Invoke($"{fileName} не найден");
                 context.Response.StatusCode = 404;
                 context.Response.Close();
                 return;
@@ -396,7 +396,7 @@ namespace FakeSpeedTestServer
             
             if (!File.Exists(filePath))
             {
-                _logErrorAction?.Invoke("index.html not found");
+                _logErrorAction?.Invoke("index.html не найден");
                 context.Response.StatusCode = 500;
                 context.Response.Close();
                 return;

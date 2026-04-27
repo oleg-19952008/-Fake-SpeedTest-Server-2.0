@@ -111,15 +111,15 @@ namespace FakeSpeedTestServer
                         {
                             _isInSleepMode = true;
                             _isForceRunRequested = false;
-                            Console.WriteLine("[Night Mode] Entering sleep mode.");
-                            _logAction?.Invoke("Night mode started");
+                            Console.WriteLine("[Ночной режим] Переход в спящий режим.");
+                            _logAction?.Invoke("Ночной режим запущен");
                         }
                         else if (!isNight && _isInSleepMode)
                         {
                             _isInSleepMode = false;
                             _isForceRunRequested = false;
-                            Console.WriteLine("[Night Mode] Exiting sleep mode.");
-                            _logAction?.Invoke("Night mode ended");
+                            Console.WriteLine("[Ночной режим] Выход из спящего режима.");
+                            _logAction?.Invoke("Ночной режим завершён");
                         }
                     }
 
@@ -132,7 +132,7 @@ namespace FakeSpeedTestServer
                 }
                 catch (Exception ex)
                 {
-                    _logAction?.Invoke($"Night mode check error: {ex.Message}");
+                    _logAction?.Invoke($"Ошибка проверки ночного режима: {ex.Message}");
                 }
             }
         }
@@ -145,7 +145,7 @@ namespace FakeSpeedTestServer
         /// <returns>Task that completes when night mode ends or force run is requested</returns>
         public async Task WaitForNightModeEndOrForceRun(CancellationTokenSource serverCts)
         {
-            Console.WriteLine("[Night Mode] Server is sleeping. Press 'Y' to force run.");
+            Console.WriteLine("[Ночной режим] Сервер спит. Нажмите 'Y' для принудительного запуска.");
 
             while (IsInSleepMode)
             {
@@ -158,7 +158,7 @@ namespace FakeSpeedTestServer
                         {
                             _isForceRunRequested = true;
                         }
-                        Console.WriteLine("[Night Mode] Force run requested!");
+                        Console.WriteLine("[Ночной режим] Запрошен принудительный запуск!");
                         break;
                     }
                 }

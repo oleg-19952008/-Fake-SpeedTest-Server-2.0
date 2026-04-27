@@ -154,7 +154,7 @@ namespace FakeSpeedTestServer
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading bans: {ex.Message}");
+                Console.WriteLine($"Ошибка загрузки банов: {ex.Message}");
             }
         }
 
@@ -176,7 +176,7 @@ namespace FakeSpeedTestServer
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error saving bans: {ex.Message}");
+                Console.WriteLine($"Ошибка сохранения банов: {ex.Message}");
             }
         }
     }

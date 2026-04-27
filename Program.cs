@@ -45,8 +45,8 @@ namespace FakeSpeedTestServer
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
-            Console.WriteLine("=== Fake SpeedTest Server v2.2 ===");
-            Console.WriteLine("Initializing...");
+            Console.WriteLine("=== Фейковый сервер SpeedTest v2.2 ===");
+            Console.WriteLine("Инициализация...");
 
             // Initialize components
             banManager = new BanManager("bans.ini");
@@ -73,8 +73,8 @@ namespace FakeSpeedTestServer
             listener = new HttpListener();
             listener.Prefixes.Add("http://+:5000/");
             listener.Start();
-            Console.WriteLine("Server started on http://*:5000/");
-            Log("Server started on port 5000");
+            Console.WriteLine("Сервер запущен на http://*:5000/");
+            Log("Сервер запущен на порту 5000");
 
             serverCts = new CancellationTokenSource();
 
@@ -103,7 +103,7 @@ namespace FakeSpeedTestServer
                 if ((DateTime.Now - lastTitleUpdate).TotalSeconds >= 30)
                 {
                     int connections = banManager.GetConnectionsLast24Hours();
-                    Console.Title = $"Fake SpeedTest Server v2.2 - Connections (24h): {connections}";
+                    Console.Title = $"Фейковый сервер SpeedTest v2.2 - Подключений (24ч): {connections}";
                     lastTitleUpdate = DateTime.Now;
                 }
 
@@ -126,8 +126,8 @@ namespace FakeSpeedTestServer
             listener.Close();
             fileWatcher?.Dispose();
             nightModeService?.Stop();
-            Console.WriteLine("Server stopped.");
-            Log("Server stopped");
+            Console.WriteLine("Сервер остановлен.");
+            Log("Сервер остановлен");
         }
 
         /// <summary>
@@ -139,7 +139,7 @@ namespace FakeSpeedTestServer
             var filePath = "suspicious_agents.txt";
             if (!File.Exists(filePath))
             {
-                Console.WriteLine($"Warning: {filePath} not found. Using defaults.");
+                Console.WriteLine($"Предупреждение: {filePath} не найден. Используются значения по умолчанию.");
                 suspiciousUserAgents = new HashSet<string>(new string[]
                 {
                     "curl", "wget", "python", "scanner", "bot", "spider", "crawler",
@@ -161,11 +161,11 @@ namespace FakeSpeedTestServer
                         suspiciousUserAgents.Add(trimmed);
                     }
                 }
-                Console.WriteLine($"Loaded {suspiciousUserAgents.Count} suspicious user agents.");
+                Console.WriteLine($"Загружено {suspiciousUserAgents.Count} подозрительных пользовательских агентов.");
             }
             catch (Exception ex)
             {
-                LogErrorToFile($"Error loading suspicious agents: {ex.Message}");
+                LogErrorToFile($"Ошибка загрузки подозрительных агентов: {ex.Message}");
             }
         }
 
@@ -186,13 +186,13 @@ namespace FakeSpeedTestServer
             {
                 // Debounce - wait 100ms before reloading
                 Thread.Sleep(100);
-                Console.WriteLine("Reloading suspicious_agents.txt...");
+                Console.WriteLine("Перезагрузка suspicious_agents.txt...");
                 LoadSuspiciousUserAgents();
-                Log("Reloaded suspicious_agents.txt");
+                Log("Файл suspicious_agents.txt перезагружен");
             };
 
             fileWatcher.EnableRaisingEvents = true;
-            Console.WriteLine($"Watching {filePath} for changes.");
+            Console.WriteLine($"Мониторинг изменений файла {filePath}.");
         }
 
         /// <summary>
@@ -203,7 +203,7 @@ namespace FakeSpeedTestServer
             var filePath = "random_headers.txt";
             if (!File.Exists(filePath))
             {
-                Console.WriteLine($"Warning: {filePath} not found.");
+                Console.WriteLine($"Предупреждение: {filePath} не найден.");
                 return;
             }
 
@@ -222,11 +222,11 @@ namespace FakeSpeedTestServer
                         }
                     }
                 }
-                Console.WriteLine($"Loaded {randomHeaders.Count} random headers.");
+                Console.WriteLine($"Загружено {randomHeaders.Count} случайных заголовков.");
             }
             catch (Exception ex)
             {
-                LogErrorToFile($"Error loading random headers: {ex.Message}");
+                LogErrorToFile($"Ошибка загрузки случайных заголовков: {ex.Message}");
             }
         }
 
@@ -240,7 +240,7 @@ namespace FakeSpeedTestServer
             currentLogFile = $"server_log_{timestamp}.txt";
             
             // Create empty log file with header
-            File.WriteAllText(currentLogFile, $"=== Log started at {DateTime.Now:dd-MM-yyyy HH:mm:ss} ===\r\n", Encoding.UTF8);
+            File.WriteAllText(currentLogFile, $"=== Журнал запущен {DateTime.Now:dd-MM-yyyy HH:mm:ss} ===\r\n", Encoding.UTF8);
         }
 
         /// <summary>
@@ -263,7 +263,7 @@ namespace FakeSpeedTestServer
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error writing to log: {ex.Message}");
+                    Console.WriteLine($"Ошибка записи в журнал: {ex.Message}");
                 }
             }
         }
@@ -276,7 +276,7 @@ namespace FakeSpeedTestServer
         private static void LogErrorToFile(string message)
         {
             var timestamp = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");
-            var logEntry = $"[{timestamp}] ERROR: {message}";
+            var logEntry = $"[{timestamp}] ОШИБКА: {message}";
             
             Console.WriteLine(logEntry);
             
@@ -288,7 +288,7 @@ namespace FakeSpeedTestServer
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error writing error to log: {ex.Message}");
+                    Console.WriteLine($"Ошибка записи ошибки в журнал: {ex.Message}");
                 }
             }
         }
