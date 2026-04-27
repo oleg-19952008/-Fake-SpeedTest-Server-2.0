@@ -268,7 +268,21 @@ namespace FakeSpeedTestServer
             else if (url == "/updateBrowserInfo")
             {
                 // Возвращаем информацию о браузере включая IP адрес клиента
-                var clientIpAddress = context.Request.RemoteEndPoint.Address.ToString();
+                // Сначала пробуем получить реальный IP из заголовков прокси
+                var clientIpAddress = context.Request.Headers["X-Forwarded-For"] ?? 
+                                      context.Request.Headers["X-Real-IP"] ?? 
+                                      context.Request.RemoteEndPoint.Address.ToString();
+                
+                // Если X-Forwarded-For содержит несколько адресов, берем первый (реальный IP клиента)
+                if (!string.IsNullOrEmpty(context.Request.Headers["X-Forwarded-For"]))
+                {
+                    var forwardedIps = context.Request.Headers["X-Forwarded-For"].Split(',');
+                    if (forwardedIps.Length > 0)
+                    {
+                        clientIpAddress = forwardedIps[0].Trim();
+                    }
+                }
+                
                 var userAgent = context.Request.UserAgent ?? "Не определен";
                 var platform = context.Request.Headers["Sec-Ch-Ua-Platform"] ?? 
                                (userAgent.Contains("Windows") ? "Win32" : 
