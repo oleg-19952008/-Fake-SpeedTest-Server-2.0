@@ -104,19 +104,45 @@ namespace FakeSpeedTestServer
 
         /// <summary>
         /// Main server loop that accepts and processes incoming HTTP requests.
-        /// Handles night mode sleep states and graceful shutdown.
+        /// During night mode sleep, the listener is stopped to prevent any request handling.
         /// Updates window title with connection count every 30 seconds.
         /// </summary>
         private static async Task MainLoop()
         {
             var lastTitleUpdate = DateTime.MinValue;
+            bool listenerRunning = true;
             
             while (!serverCts.Token.IsCancellationRequested)
             {
                 // Check night mode
                 if (nightModeService.IsInSleepMode)
                 {
+                    // Stop listener if it's running to ensure complete silence
+                    if (listenerRunning)
+                    {
+                        listener.Stop();
+                        listenerRunning = false;
+                        Console.WriteLine("[Ночной режим] Слушатель остановлен. Сервер спит.");
+                    }
+                    
                     await nightModeService.WaitForNightModeEndOrForceRun(serverCts);
+                    
+                    // Restart listener after waking up
+                    if (!listenerRunning && !serverCts.Token.IsCancellationRequested)
+                    {
+                        listener.Start();
+                        listenerRunning = true;
+                        Console.WriteLine("[Ночной режим] Слушатель запущен. Сервер проснулся.");
+                    }
+                }
+                else
+                {
+                    // Ensure listener is running during day mode
+                    if (!listenerRunning)
+                    {
+                        listener.Start();
+                        listenerRunning = true;
+                    }
                 }
 
                 // Update window title with connection count and banned IPs every 30 seconds
