@@ -1,1 +1,1 @@
-Nothing should be ignored based on the provided file changes. The changes only include source/config files (.md) and no build artifacts, dependencies, or temp files that would warrant adding ignore rules.
+Nothing needs to be added to the .gitignore file based on the provided changes. The listed files (admin.html, admin.js, Program.cs, RequestHandler.cs) are all source code files that should be tracked in version control.

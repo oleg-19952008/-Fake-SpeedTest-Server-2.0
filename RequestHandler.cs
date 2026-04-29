@@ -35,7 +35,9 @@ namespace FakeSpeedTestServer
             "/updateBrowserInfo",
             "/748_dark",
             "/style.css",
-            "/script.js"
+            "/script.js",
+            "/admin.html",
+            "/admin.js"
         };
 
         /// <summary>
@@ -311,6 +313,14 @@ namespace FakeSpeedTestServer
             else if (url == "/script.js")
             {
                 await ServeStaticFile(context, "script.js", "application/javascript").ConfigureAwait(false);
+            }
+            else if (url == "/admin.html")
+            {
+                await ServeStaticFile(context, "admin.html", "text/html").ConfigureAwait(false);
+            }
+            else if (url == "/admin.js")
+            {
+                await ServeStaticFile(context, "admin.js", "application/javascript").ConfigureAwait(false);
             }
             else if (url.StartsWith("/download/", StringComparison.OrdinalIgnoreCase))
             {

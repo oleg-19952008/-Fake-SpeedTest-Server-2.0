@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель - BanManager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #00d9ff;
+            font-size: 24px;
+        }
+
+        .status-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            color: #aaa;
+        }
+
+        .status-value {
+            font-weight: bold;
+            color: #00d9ff;
+        }
+
+        .action-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #00d9ff;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d9ff 0%, #0099cc 100%);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 217, 255, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff4757 0%, #cc3344 100%);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 71, 87, 0.4);
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .message.success {
+            background: rgba(46, 204, 113, 0.2);
+            border: 1px solid #2ecc71;
+            color: #2ecc71;
+            display: block;
+        }
+
+        .message.error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+            display: block;
+        }
+
+        .access-denied {
+            text-align: center;
+            padding: 50px;
+        }
+
+        .access-denied h2 {
+            color: #ff4757;
+            margin-bottom: 20px;
+        }
+
+        .target-ip {
+            background: rgba(0, 217, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .target-ip strong {
+            color: #00d9ff;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="adminPanel" style="display: none;">
+        <h1>🔐 Админ-панель управления банами</h1>
+        
+        <div class="status-panel">
+            <div class="status-item">
+                <span class="status-label">Ваш IP:</span>
+                <span class="status-value" id="clientIp">Загрузка...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Статус доступа:</span>
+                <span class="status-value" id="accessStatus">Проверка...</span>
+            </div>
+        </div>
+
+        <div class="target-ip">
+            <strong>Целевой IP для разблокировки: 89.109.20.234</strong>
+        </div>
+
+        <div class="action-panel">
+            <div class="form-group">
+                <label for="ipToUnban">IP адрес для снятия бана:</label>
+                <input type="text" id="ipToUnban" value="89.109.20.234" placeholder="Введите IP адрес">
+            </div>
+            <button class="btn btn-primary" onclick="unbanIP()">Снять бан</button>
+        </div>
+
+        <div class="action-panel">
+            <div class="form-group">
+                <label for="ipToBan">IP адрес для блокировки:</label>
+                <input type="text" id="ipToBan" placeholder="Введите IP адрес">
+            </div>
+            <button class="btn btn-danger" onclick="banIP()">Заблокировать</button>
+        </div>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <div class="container" id="accessDenied" style="display: none;">
+        <div class="access-denied">
+            <h2>🚫 Доступ запрещён</h2>
+            <p>Админ-панель доступна только с IP адреса 2.2.2.103</p>
+            <p>Ваш IP: <span id="deniedIp"></span></p>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
