@@ -22,6 +22,7 @@ namespace FakeSpeedTestServer
         private readonly HashSet<string> _suspiciousUserAgents;
         private readonly Action<string> _logAction;
         private readonly Action<string> _logErrorAction;
+        private readonly string _baseDirectory;
 
         // File size limits (1 MB to 10240 MB = 10 GB)
         private const int MinFileSizeMB = 1;
@@ -66,6 +67,7 @@ namespace FakeSpeedTestServer
             _suspiciousUserAgents = suspiciousUserAgents;
             _logAction = logAction;
             _logErrorAction = logErrorAction;
+            _baseDirectory = Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory);
         }
 
         /// <summary>
@@ -407,7 +409,19 @@ namespace FakeSpeedTestServer
         /// <returns>Task representing the asynchronous operation</returns>
         private async Task ServeStaticFile(HttpListenerContext context, string fileName, string contentType)
         {
-            if (!File.Exists(fileName))
+            // Path Traversal Protection: Validate and resolve the full path
+            var fullPath = Path.GetFullPath(Path.Combine(_baseDirectory, fileName));
+            
+            // Ensure the resolved path is within the base directory
+            if (!fullPath.StartsWith(_baseDirectory, StringComparison.OrdinalIgnoreCase))
+            {
+                _logErrorAction?.Invoke($"Попытка Path Traversal атака: {fileName}");
+                context.Response.StatusCode = 403;
+                context.Response.Close();
+                return;
+            }
+            
+            if (!File.Exists(fullPath))
             {
                 _logErrorAction?.Invoke($"{fileName} не найден");
                 context.Response.StatusCode = 404;
@@ -417,7 +431,7 @@ namespace FakeSpeedTestServer
 
             var response = context.Response;
             response.ContentType = contentType;
-            var fileContent = File.ReadAllText(fileName);
+            var fileContent = File.ReadAllText(fullPath);
             var buffer = Encoding.UTF8.GetBytes(fileContent);
             response.ContentLength64 = buffer.Length;
             
@@ -435,7 +449,18 @@ namespace FakeSpeedTestServer
         /// <returns>Task representing the asynchronous operation</returns>
         private async Task ServeHomePage(HttpListenerContext context)
         {
-            var filePath = "index.html";
+            // Path Traversal Protection: Validate and resolve the full path
+            var filePath = Path.GetFullPath(Path.Combine(_baseDirectory, "index.html"));
+            
+            // Ensure the resolved path is within the base directory
+            if (!filePath.StartsWith(_baseDirectory, StringComparison.OrdinalIgnoreCase))
+            {
+                _logErrorAction?.Invoke("Попытка Path Traversal атака: index.html");
+                context.Response.StatusCode = 403;
+                context.Response.Close();
+                return;
+            }
+            
             string html;
             
             if (!File.Exists(filePath))

@@ -1,1 +1,47 @@
-Nothing needs to be added to the .gitignore file based on the provided changes. The listed files (admin.html, admin.js, Program.cs, RequestHandler.cs) are all source code files that should be tracked in version control.
+```
+# Compiled and binary files
+*.exe
+*.dll
+*.so
+*.o
+*.obj
+*.pyc
+__pycache__/
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+.env
+.env.local
+*.env.*
+
+# Build artifacts
+dist/
+build/
+target/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Package management
+.gradle/
+.mypy_cache/
+.pytest_cache/
+```
