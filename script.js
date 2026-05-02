@@ -61,6 +61,54 @@ function updateBrowserInfoDisplay(basicInfo) {
 // Load browser info on page load
 loadBrowserInfo();
 
+// Theme toggle functionality with auto-detect system preference
+(function() {
+    var themeToggle = document.getElementById('themeToggle');
+    var body = document.body;
+    
+    // Function to update button icon based on current theme
+    function updateThemeIcon(isDark) {
+        themeToggle.textContent = isDark ? '☀️' : '🌙';
+        themeToggle.setAttribute('title', isDark ? 'Переключить на светлую тему' : 'Переключить на тёмную тему');
+    }
+    
+    // Function to apply theme
+    function applyTheme(theme) {
+        body.classList.remove('light-theme', 'dark-theme');
+        body.classList.add(theme + '-theme');
+        localStorage.setItem('theme', theme);
+        updateThemeIcon(theme === 'dark');
+    }
+    
+    // Check for saved theme or auto-detect system preference
+    var savedTheme = localStorage.getItem('theme');
+    
+    if (savedTheme) {
+        // Use saved theme
+        applyTheme(savedTheme);
+    } else {
+        // Auto-detect system theme preference
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        applyTheme(prefersDark ? 'dark' : 'light');
+    }
+    
+    // Listen for system theme changes
+    if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+            // Only auto-switch if user hasn't manually set a preference
+            if (!localStorage.getItem('theme')) {
+                applyTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+    }
+    
+    // Toggle theme on button click
+    themeToggle.addEventListener('click', function() {
+        var isCurrentlyDark = body.classList.contains('dark-theme');
+        applyTheme(isCurrentlyDark ? 'light' : 'dark');
+    });
+})();
+
 // Measure ping using 3 sequential fetch requests and return median
 async function measurePing() {
     var measurements = [];
