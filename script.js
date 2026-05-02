@@ -60,3 +60,54 @@ function updateBrowserInfoDisplay(basicInfo) {
 
 // Load browser info on page load
 loadBrowserInfo();
+
+// Measure ping using 10 sequential fetch requests and return median
+async function measurePing() {
+    var measurements = [];
+    
+    // Perform 10 sequential requests
+    for (var i = 0; i < 10; i++) {
+        var startTime = performance.now();
+        try {
+            await fetch('/ping', { method: 'GET' });
+            var endTime = performance.now();
+            measurements.push(endTime - startTime);
+        } catch (error) {
+            console.error('Ping request failed:', error);
+        }
+    }
+    
+    // Return median if we have measurements
+    if (measurements.length === 0) {
+        return null;
+    }
+    
+    // Sort measurements to find median
+    measurements.sort(function(a, b) { return a - b; });
+    
+    // Calculate median
+    var mid = Math.floor(measurements.length / 2);
+    var median;
+    if (measurements.length % 2 === 0) {
+        median = (measurements[mid - 1] + measurements[mid]) / 2;
+    } else {
+        median = measurements[mid];
+    }
+    
+    return median;
+}
+
+// Start ping measurement and display result
+async function startPingMeasurement() {
+    var resultDiv = document.getElementById('pingResult');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = 'Измерение пинга...';
+    
+    var ping = await measurePing();
+    
+    if (ping !== null) {
+        resultDiv.innerHTML = 'Пинг: ' + Math.round(ping) + ' мс';
+    } else {
+        resultDiv.innerHTML = 'Ошибка измерения пинга';
+    }
+}

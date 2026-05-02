@@ -34,6 +34,7 @@ namespace FakeSpeedTestServer
             "/",
             "/favicon.ico",
             "/updateBrowserInfo",
+            "/ping",
             "/748_dark",
             "/style.css",
             "/script.js",
@@ -300,6 +301,19 @@ namespace FakeSpeedTestServer
                 
                 var buffer = Encoding.UTF8.GetBytes(responseInfo);
                 context.Response.ContentType = "application/json; charset=utf-8";
+                context.Response.ContentLength64 = buffer.Length;
+                using (var output = context.Response.OutputStream)
+                {
+                    await output.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                }
+                context.Response.Close();
+            }
+            else if (url == "/ping")
+            {
+                // Ping endpoint - returns minimal JSON response with 200 OK
+                var responseJson = "{\"status\":\"ok\"}";
+                var buffer = Encoding.UTF8.GetBytes(responseJson);
+                context.Response.ContentType = "application/json";
                 context.Response.ContentLength64 = buffer.Length;
                 using (var output = context.Response.OutputStream)
                 {

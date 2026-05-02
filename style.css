@@ -85,3 +85,32 @@ h1 {
     background: #e8f4e8; 
     border-radius: 5px; 
 }
+
+#pingSection {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f0f0f0;
+    border-radius: 5px;
+}
+
+#pingSection button {
+    padding: 8px 20px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#pingSection button:hover {
+    background: #218838;
+}
+
+.ping-result {
+    margin-top: 15px;
+    padding: 10px;
+    background: #fff;
+    border-radius: 4px;
+    display: none;
+    font-weight: bold;
+}
