@@ -201,9 +201,11 @@ async function startPingMeasurement() {
     isMeasuringPing = false;
     
     if (result !== null) {
-        resultDiv.innerHTML = 'Пинг: ' + Math.round(result.ping) + ' мс<br>' +
-                              'Джиттер: ' + Math.round(result.jitter) + ' мс<br>' +
-                              'Мин: ' + Math.round(result.min) + ' мс | Макс: ' + Math.round(result.max) + ' мс';
+        resultDiv.innerHTML = '<strong>Результаты измерения пинга:</strong><br>' +
+                              'Пинг (медиана): ' + result.ping.toFixed(2) + ' мс<br>' +
+                              'Джиттер: ' + result.jitter.toFixed(2) + ' мс<br>' +
+                              'Средний: ' + result.avg.toFixed(2) + ' мс<br>' +
+                              'Мин: ' + result.min.toFixed(2) + ' мс | Макс: ' + result.max.toFixed(2) + ' мс';
     } else {
         resultDiv.innerHTML = 'Ошибка измерения пинга';
     }
