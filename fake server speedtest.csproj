@@ -12,7 +12,7 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
-    <ApplicationVersion>2.9.4</ApplicationVersion>
+    <ApplicationVersion>2.10.0</ApplicationVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -49,6 +49,7 @@
     <Compile Include="BanManager.cs" />
     <Compile Include="NightModeService.cs" />
     <Compile Include="RequestHandler.cs" />
+    <Compile Include="Base64Url.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
