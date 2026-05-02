@@ -187,4 +187,5 @@ body.dark-theme .theme-toggle:hover {
     border-radius: 4px;
     display: none;
     font-weight: bold;
+    line-height: 1.6;
 }

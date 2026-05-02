@@ -109,11 +109,11 @@ loadBrowserInfo();
     });
 })();
 
-// Measure ping using 3 sequential fetch requests and return median
+// Measure ping using 3 sequential fetch requests with 10ms delay between each and calculate jitter
 async function measurePing() {
     var measurements = [];
     
-    // Perform 3 sequential requests
+    // Perform 3 sequential requests with 10ms delay between each
     for (var i = 0; i < 3; i++) {
         var startTime = performance.now();
         try {
@@ -123,9 +123,14 @@ async function measurePing() {
         } catch (error) {
             console.error('Ping request failed:', error);
         }
+        
+        // Add 10ms delay between requests (except after the last one)
+        if (i < 2) {
+            await new Promise(function(resolve) { setTimeout(resolve, 10); });
+        }
     }
     
-    // Return median if we have measurements
+    // Return null if we have no measurements
     if (measurements.length === 0) {
         return null;
     }
@@ -142,7 +147,26 @@ async function measurePing() {
         median = measurements[mid];
     }
     
-    return median;
+    // Calculate jitter (standard deviation of measurements)
+    var sum = 0;
+    for (var j = 0; j < measurements.length; j++) {
+        sum += measurements[j];
+    }
+    var avg = sum / measurements.length;
+    
+    var varianceSum = 0;
+    for (var k = 0; k < measurements.length; k++) {
+        varianceSum += Math.pow(measurements[k] - avg, 2);
+    }
+    var jitter = Math.sqrt(varianceSum / measurements.length);
+    
+    return {
+        ping: median,
+        jitter: jitter,
+        min: measurements[0],
+        max: measurements[measurements.length - 1],
+        avg: avg
+    };
 }
 
 // Start ping measurement and display result with anti-spam protection (2 second cooldown)
@@ -172,12 +196,14 @@ async function startPingMeasurement() {
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = 'Измерение пинга...';
     
-    var ping = await measurePing();
+    var result = await measurePing();
     
     isMeasuringPing = false;
     
-    if (ping !== null) {
-        resultDiv.innerHTML = 'Пинг: ' + Math.round(ping) + ' мс';
+    if (result !== null) {
+        resultDiv.innerHTML = 'Пинг: ' + Math.round(result.ping) + ' мс<br>' +
+                              'Джиттер: ' + Math.round(result.jitter) + ' мс<br>' +
+                              'Мин: ' + Math.round(result.min) + ' мс | Макс: ' + Math.round(result.max) + ' мс';
     } else {
         resultDiv.innerHTML = 'Ошибка измерения пинга';
     }
