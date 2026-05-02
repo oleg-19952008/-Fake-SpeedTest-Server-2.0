@@ -61,12 +61,12 @@ function updateBrowserInfoDisplay(basicInfo) {
 // Load browser info on page load
 loadBrowserInfo();
 
-// Measure ping using 10 sequential fetch requests and return median
+// Measure ping using 3 sequential fetch requests and return median
 async function measurePing() {
     var measurements = [];
     
-    // Perform 10 sequential requests
-    for (var i = 0; i < 10; i++) {
+    // Perform 3 sequential requests
+    for (var i = 0; i < 3; i++) {
         var startTime = performance.now();
         try {
             await fetch('/ping', { method: 'GET' });
@@ -97,13 +97,36 @@ async function measurePing() {
     return median;
 }
 
-// Start ping measurement and display result
+// Start ping measurement and display result with anti-spam protection (2 second cooldown)
+var lastPingMeasurementTime = 0;
+var isMeasuringPing = false;
+
 async function startPingMeasurement() {
     var resultDiv = document.getElementById('pingResult');
+    
+    // Check if already measuring
+    if (isMeasuringPing) {
+        return;
+    }
+    
+    // Check cooldown (2 seconds)
+    var currentTime = Date.now();
+    var timeSinceLastMeasurement = currentTime - lastPingMeasurementTime;
+    if (timeSinceLastMeasurement < 2000 && lastPingMeasurementTime !== 0) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = 'Подождите ' + Math.ceil((2000 - timeSinceLastMeasurement) / 1000) + ' сек...';
+        return;
+    }
+    
+    isMeasuringPing = true;
+    lastPingMeasurementTime = currentTime;
+    
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = 'Измерение пинга...';
     
     var ping = await measurePing();
+    
+    isMeasuringPing = false;
     
     if (ping !== null) {
         resultDiv.innerHTML = 'Пинг: ' + Math.round(ping) + ' мс';
