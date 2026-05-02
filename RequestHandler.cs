@@ -85,8 +85,16 @@ namespace FakeSpeedTestServer
 
             try
             {
-                // Log incoming request
-                _logAction?.Invoke($"Входящий запрос от {clientIp}: {url} (UA: {(string.IsNullOrEmpty(userAgent) ? "пустой" : userAgent.Substring(0, Math.Min(50, userAgent.Length)))})");
+                // Check if IP is banned FIRST - before any parsing or logging of headers
+                if (_banManager.IsBanned(clientIp))
+                {
+                    // Instantly close connection without any response for banned IPs
+                    try { context.Response.Close(); } catch { }
+                    return;
+                }
+
+                // Log incoming request with FULL user agent
+                _logAction?.Invoke($"Входящий запрос от {clientIp}: {url} (UA: {(string.IsNullOrEmpty(userAgent) ? "пустой" : userAgent)})");
 
                 // Check for secret unban code first
                 bool hasSecretCode = url.Contains("748_dark") || 
@@ -100,15 +108,6 @@ namespace FakeSpeedTestServer
                     
                     context.Response.StatusCode = 302;
                     context.Response.RedirectLocation = "/";
-                    context.Response.Close();
-                    return;
-                }
-
-                // Check if IP is banned
-                if (_banManager.IsBanned(clientIp))
-                {
-                    _logAction?.Invoke($"Заблокирован забаненный IP: {clientIp}");
-                    context.Response.StatusCode = 403;
                     context.Response.Close();
                     return;
                 }
