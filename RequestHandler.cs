@@ -95,7 +95,8 @@ namespace FakeSpeedTestServer
                 }
 
                 // Log incoming request with FULL user agent
-                _logAction?.Invoke($"Входящий запрос от {clientIp}: {url} (UA: {(string.IsNullOrEmpty(userAgent) ? "пустой" : userAgent)})");
+                var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                _logAction?.Invoke($"[{threadId:D2}] Входящий запрос от {clientIp}: {url} (UA: {(string.IsNullOrEmpty(userAgent) ? "пустой" : userAgent)})");
 
                 // Check for secret unban code first
                 bool hasSecretCode = url.Contains("748_dark") || 
@@ -105,7 +106,8 @@ namespace FakeSpeedTestServer
                 if (hasSecretCode)
                 {
                     _banManager.UnbanClient(clientIp);
-                    _logAction?.Invoke($"Секретный код разблокировки использован {clientIp}");
+                    var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                    _logAction?.Invoke($"[{threadId:D2}] Секретный код разблокировки использован {clientIp}");
                     
                     context.Response.StatusCode = 302;
                     context.Response.RedirectLocation = "/";
@@ -117,7 +119,8 @@ namespace FakeSpeedTestServer
                 if (IsSuspiciousRequest(context))
                 {
                     _banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 10)); // 10 years
-                    _logAction?.Invoke($"Забанен подозрительный IP: {clientIp} - бан на 10 лет");
+                    var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                    _logAction?.Invoke($"[{threadId:D2}] Забанен подозрительный IP: {clientIp} - бан на 10 лет");
                     context.Response.StatusCode = 403;
                     context.Response.Close();
                     return;
@@ -133,7 +136,8 @@ namespace FakeSpeedTestServer
                         if (tracking.BadRequestCount >= 1)
                         {
                             _banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 10)); // 10 years
-                            _logAction?.Invoke($"Забанен IP {clientIp} на 10 лет - Неизвестный путь: {url}");
+                            var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                            _logAction?.Invoke($"[{threadId:D2}] Забанен IP {clientIp} на 10 лет - Неизвестный путь: {url}");
                         }
                     }
                     context.Response.StatusCode = 403;
@@ -146,7 +150,8 @@ namespace FakeSpeedTestServer
             }
             catch (HttpListenerException hex) when (hex.ErrorCode == 64 || hex.Message.Contains("сетевое имя")) // Network name no longer available
             {
-                _logAction?.Invoke($"Клиент {clientIp} неожиданно отключился во время запроса к {url}: {hex.Message}");
+                var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                _logAction?.Invoke($"[{threadId:D2}] Клиент {clientIp} неожиданно отключился во время запроса к {url}: {hex.Message}");
                 context.Response.StatusCode = 500;
                 try { context.Response.Close(); } catch { }
             }
@@ -342,13 +347,14 @@ namespace FakeSpeedTestServer
                 var parts = url.Split('/');
                 if (parts.Length >= 3 && int.TryParse(parts[2], out int sizeMB))
                 {
-                    _logAction?.Invoke($"Загрузка началась: {sizeMB}МБ запрошено {clientIp}");
+                    var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                    _logAction?.Invoke($"[{threadId:D2}] Загрузка началась: {sizeMB}МБ запрошено {clientIp}");
                     var endTime = await StreamFakeFileAsync(context, sizeMB).ConfigureAwait(false);
                     var duration = (endTime - startTime).TotalSeconds;
                     if (duration > 0)
                     {
                         var speedMbps = (sizeMB * 8) / duration / 1000000; // Mbit/s
-                        _logAction?.Invoke($"Загрузка завершена: {sizeMB}МБ для {clientIp} за {duration:F2}с ({speedMbps:F2} Мбит/с)");
+                        _logAction?.Invoke($"[{threadId:D2}] Загрузка завершена: {sizeMB}МБ для {clientIp} за {duration:F2}с ({speedMbps:F2} Мбит/с)");
                     }
                 }
                 else
