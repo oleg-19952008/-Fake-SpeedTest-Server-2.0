@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -453,11 +454,38 @@ namespace FakeSpeedTestServer
             response.ContentType = contentType;
             var fileContent = File.ReadAllText(fullPath);
             var buffer = Encoding.UTF8.GetBytes(fileContent);
-            response.ContentLength64 = buffer.Length;
             
-            using (var output = response.OutputStream)
+            // Check if client accepts gzip encoding
+            string acceptEncoding = context.Request.Headers["Accept-Encoding"] ?? "";
+            bool useGzip = acceptEncoding.Contains("gzip");
+            
+            if (useGzip)
             {
-                await output.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                using (var compressedStream = new MemoryStream())
+                {
+                    using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress, leaveOpen: true))
+                    {
+                        await gzipStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                    }
+                    var compressedBuffer = compressedStream.ToArray();
+                    
+                    response.Headers.Add("Content-Encoding", "gzip");
+                    response.ContentLength64 = compressedBuffer.Length;
+                    
+                    using (var output = response.OutputStream)
+                    {
+                        await output.WriteAsync(compressedBuffer, 0, compressedBuffer.Length).ConfigureAwait(false);
+                    }
+                }
+            }
+            else
+            {
+                response.ContentLength64 = buffer.Length;
+                
+                using (var output = response.OutputStream)
+                {
+                    await output.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                }
             }
         }
 
@@ -496,10 +524,37 @@ namespace FakeSpeedTestServer
             var response = context.Response;
             response.ContentType = "text/html; charset=utf-8";
             var buffer = Encoding.UTF8.GetBytes(html);
-            response.ContentLength64 = buffer.Length;
-            using (var output = response.OutputStream)
+            
+            // Check if client accepts gzip encoding
+            string acceptEncoding = context.Request.Headers["Accept-Encoding"] ?? "";
+            bool useGzip = acceptEncoding.Contains("gzip");
+            
+            if (useGzip)
             {
-                await output.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                using (var compressedStream = new MemoryStream())
+                {
+                    using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress, leaveOpen: true))
+                    {
+                        await gzipStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                    }
+                    var compressedBuffer = compressedStream.ToArray();
+                    
+                    response.Headers.Add("Content-Encoding", "gzip");
+                    response.ContentLength64 = compressedBuffer.Length;
+                    
+                    using (var output = response.OutputStream)
+                    {
+                        await output.WriteAsync(compressedBuffer, 0, compressedBuffer.Length).ConfigureAwait(false);
+                    }
+                }
+            }
+            else
+            {
+                response.ContentLength64 = buffer.Length;
+                using (var output = response.OutputStream)
+                {
+                    await output.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                }
             }
         }
     }
