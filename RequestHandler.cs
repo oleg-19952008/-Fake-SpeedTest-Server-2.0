@@ -2,9 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace FakeSpeedTestServer
 {
@@ -150,7 +151,7 @@ namespace FakeSpeedTestServer
             }
             catch (HttpListenerException hex) when (hex.ErrorCode == 64 || hex.Message.Contains("сетевое имя")) // Network name no longer available
             {
-                threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+             int   threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                 _logAction?.Invoke($"[{threadId:D2}] Клиент {clientIp} неожиданно отключился во время запроса к {url}: {hex.Message}");
                 context.Response.StatusCode = 500;
                 try { context.Response.Close(); } catch { }
@@ -347,7 +348,7 @@ namespace FakeSpeedTestServer
                 var parts = url.Split('/');
                 if (parts.Length >= 3 && int.TryParse(parts[2], out int sizeMB))
                 {
-                    threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                    int threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                     _logAction?.Invoke($"[{threadId:D2}] Загрузка началась: {sizeMB}МБ запрошено {clientIp}");
                     var endTime = await StreamFakeFileAsync(context, sizeMB).ConfigureAwait(false);
                     var duration = (endTime - startTime).TotalSeconds;
