@@ -95,7 +95,7 @@ namespace FakeSpeedTestServer
                 }
 
                 // Log incoming request with FULL user agent
-                var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                int threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                 _logAction?.Invoke($"[{threadId:D2}] Входящий запрос от {clientIp}: {url} (UA: {(string.IsNullOrEmpty(userAgent) ? "пустой" : userAgent)})");
 
                 // Check for secret unban code first
@@ -106,7 +106,7 @@ namespace FakeSpeedTestServer
                 if (hasSecretCode)
                 {
                     _banManager.UnbanClient(clientIp);
-                    var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                    threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                     _logAction?.Invoke($"[{threadId:D2}] Секретный код разблокировки использован {clientIp}");
                     
                     context.Response.StatusCode = 302;
@@ -119,7 +119,7 @@ namespace FakeSpeedTestServer
                 if (IsSuspiciousRequest(context))
                 {
                     _banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 10)); // 10 years
-                    var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                    threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                     _logAction?.Invoke($"[{threadId:D2}] Забанен подозрительный IP: {clientIp} - бан на 10 лет");
                     context.Response.StatusCode = 403;
                     context.Response.Close();
@@ -136,7 +136,7 @@ namespace FakeSpeedTestServer
                         if (tracking.BadRequestCount >= 1)
                         {
                             _banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 10)); // 10 years
-                            var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                            threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                             _logAction?.Invoke($"[{threadId:D2}] Забанен IP {clientIp} на 10 лет - Неизвестный путь: {url}");
                         }
                     }
@@ -150,7 +150,7 @@ namespace FakeSpeedTestServer
             }
             catch (HttpListenerException hex) when (hex.ErrorCode == 64 || hex.Message.Contains("сетевое имя")) // Network name no longer available
             {
-                var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                 _logAction?.Invoke($"[{threadId:D2}] Клиент {clientIp} неожиданно отключился во время запроса к {url}: {hex.Message}");
                 context.Response.StatusCode = 500;
                 try { context.Response.Close(); } catch { }
@@ -347,7 +347,7 @@ namespace FakeSpeedTestServer
                 var parts = url.Split('/');
                 if (parts.Length >= 3 && int.TryParse(parts[2], out int sizeMB))
                 {
-                    var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                    threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                     _logAction?.Invoke($"[{threadId:D2}] Загрузка началась: {sizeMB}МБ запрошено {clientIp}");
                     var endTime = await StreamFakeFileAsync(context, sizeMB).ConfigureAwait(false);
                     var duration = (endTime - startTime).TotalSeconds;
