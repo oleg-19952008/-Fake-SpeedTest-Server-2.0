@@ -18,7 +18,7 @@ namespace FakeSpeedTestServer
     class Program
     {
         // Global version constant
-        private const string AppVersion = "2.9.2";
+        private const string AppVersion = "2.10.0";
         
         // Server components
         private static BanManager banManager;
