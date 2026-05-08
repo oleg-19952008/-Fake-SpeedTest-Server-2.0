@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 namespace FakeSpeedTestServer
 {
     /// <summary>
-    /// Handles incoming HTTP requests for the fake speed test server.
-    /// Manages request routing, ban checking, suspicious request detection,
-    /// and response generation including file streaming and static file serving.
+    /// Обрабатывает входящие HTTP-запросы для поддельного сервера проверки скорости.
+    /// Управляет маршрутизацией запросов, проверкой банов, обнаружением подозрительных запросов,
+    /// а также генерацией ответов, включая потоковую передачу файлов и обслуживание статических файлов.
     /// </summary>
     public class RequestHandler
     {
@@ -45,15 +45,15 @@ namespace FakeSpeedTestServer
         };
 
         /// <summary>
-        /// Initializes a new instance of the RequestHandler class.
+        /// Инициализирует новый экземпляр класса RequestHandler.
         /// </summary>
-        /// <param name="banManager">BanManager instance for ban operations</param>
-        /// <param name="nightModeService">NightModeService instance for sleep mode checks</param>
-        /// <param name="randomHeaders">List of random headers for X-Powered-By response</param>
-        /// <param name="headerLock">Lock object for thread-safe header access</param>
-        /// <param name="suspiciousUserAgents">Set of suspicious user agent strings</param>
-        /// <param name="logAction">Action for logging info messages</param>
-        /// <param name="logErrorAction">Action for logging error messages</param>
+        /// <param name="banManager">Экземпляр BanManager для операций с банами</param>
+        /// <param name="nightModeService">Экземпляр NightModeService для проверки ночного режима</param>
+        /// <param name="randomHeaders">Список случайных заголовков для ответа X-Powered-By</param>
+        /// <param name="headerLock">Объект блокировки для потокобезопасного доступа к заголовкам</param>
+        /// <param name="suspiciousUserAgents">Набор строк подозрительных пользовательских агентов</param>
+        /// <param name="logAction">Действие для логирования информационных сообщений</param>
+        /// <param name="logErrorAction">Действие для логирования сообщений об ошибках</param>
         public RequestHandler(
             BanManager banManager,
             NightModeService nightModeService,
@@ -74,12 +74,12 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Main entry point for handling HTTP requests.
-        /// Performs ban checks, suspicious request detection, whitelist validation,
-        /// and routes to appropriate handler methods.
+        /// Главная точка входа для обработки HTTP-запросов.
+        /// Выполняет проверки банов, обнаружение подозрительных запросов, проверку белого списка,
+        /// и маршрутизирует к соответствующим методам обработчиков.
         /// </summary>
-        /// <param name="context">HTTP listener context containing request/response</param>
-        /// <returns>Task representing the asynchronous operation</returns>
+        /// <param name="context">Контекст HTTP-слушателя, содержащий запрос/ответ</param>
+        /// <returns>Задача, представляющая асинхронную операцию</returns>
         public async Task HandleRequestAsync(HttpListenerContext context)
         {
             var clientIp = context.Request.RemoteEndPoint.Address.ToString();
@@ -166,11 +166,11 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Detects suspicious requests based on user agent, accept headers,
-        /// and known malicious patterns.
+        /// Обнаруживает подозрительные запросы на основе пользовательского агента, заголовков Accept,
+        /// и известных вредоносных шаблонов.
         /// </summary>
-        /// <param name="context">HTTP listener context</param>
-        /// <returns>True if request is suspicious, false otherwise</returns>
+        /// <param name="context">Контекст HTTP-слушателя</param>
+        /// <returns>True, если запрос подозрительный, иначе false</returns>
         private bool IsSuspiciousRequest(HttpListenerContext context)
         {
             var userAgent = context.Request.UserAgent ?? "";
@@ -202,11 +202,11 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Checks if a URL path is in the whitelist of allowed paths.
-        /// Includes exact matches and dynamic download paths (/download/N).
+        /// Проверяет, находится ли путь URL в белом списке разрешённых путей.
+        /// Включает точные совпадения и динамические пути загрузки (/download/N).
         /// </summary>
-        /// <param name="url">URL path to check</param>
-        /// <returns>True if URL is whitelisted, false otherwise</returns>
+        /// <param name="url">Путь URL для проверки</param>
+        /// <returns>True, если URL в белом списке, иначе false</returns>
         private bool IsWhiteListed(string url)
         {
             // Exact matches
@@ -231,11 +231,11 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Processes a validated request by routing to the appropriate handler.
-        /// Adds random X-Powered-By header to all responses.
+        /// Обрабатывает проверенный запрос, маршрутизируя его к соответствующему обработчику.
+        /// Добавляет случайный заголовок X-Powered-By ко всем ответам.
         /// </summary>
-        /// <param name="context">HTTP listener context</param>
-        /// <returns>Task representing the asynchronous operation</returns>
+        /// <param name="context">Контекст HTTP-слушателя</param>
+        /// <returns>Задача, представляющая асинхронную операцию</returns>
         private async Task ProcessRequestNormally(HttpListenerContext context)
         {
             var url = context.Request.Url.AbsolutePath;
@@ -373,12 +373,12 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Streams a fake file of specified size to the client.
-        /// File contains "ТЕСТ" markers at start and end with zero-filled data in between.
+        /// Потоково передаёт поддельный файл указанного размера клиенту.
+        /// Файл содержит маркеры "ТЕСТ" в начале и конце с данными, заполненными нулями между ними.
         /// </summary>
-        /// <param name="context">HTTP listener context</param>
-        /// <param name="sizeMB">Size of the file in megabytes</param>
-        /// <returns>DateTime when streaming completed</returns>
+        /// <param name="context">Контекст HTTP-слушателя</param>
+        /// <param name="sizeMB">Размер файла в мегабайтах</param>
+        /// <returns>DateTime завершения потоковой передачи</returns>
         private async Task<DateTime> StreamFakeFileAsync(HttpListenerContext context, int sizeMB)
         {
             var response = context.Response;
@@ -421,13 +421,13 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Serves a static file from the current directory.
-        /// Returns 404 if file doesn't exist.
+        /// Обслуживает статический файл из текущего каталога.
+        /// Возвращает 404, если файл не существует.
         /// </summary>
-        /// <param name="context">HTTP listener context</param>
-        /// <param name="fileName">Name of the file to serve</param>
-        /// <param name="contentType">MIME type of the file</param>
-        /// <returns>Task representing the asynchronous operation</returns>
+        /// <param name="context">Контекст HTTP-слушателя</param>
+        /// <param name="fileName">Имя файла для обслуживания</param>
+        /// <param name="contentType">MIME-тип файла</param>
+        /// <returns>Задача, представляющая асинхронную операцию</returns>
         private async Task ServeStaticFile(HttpListenerContext context, string fileName, string contentType)
         {
             // Path Traversal Protection: Validate and resolve the full path
@@ -490,11 +490,11 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Serves the main HTML page (index.html).
-        /// Returns 500 error if file doesn't exist.
+        /// Обслуживает главную HTML-страницу (index.html).
+        /// Возвращает ошибку 500, если файл не существует.
         /// </summary>
-        /// <param name="context">HTTP listener context</param>
-        /// <returns>Task representing the asynchronous operation</returns>
+        /// <param name="context">Контекст HTTP-слушателя</param>
+        /// <returns>Задача, представляющая асинхронную операцию</returns>
         private async Task ServeHomePage(HttpListenerContext context)
         {
             // Path Traversal Protection: Validate and resolve the full path

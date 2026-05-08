@@ -88,10 +88,10 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Background task that continuously monitors time and updates sleep mode state.
-        /// Runs every second and triggers cleanup of old tracking data.
+        /// Фоновая задача, которая непрерывно отслеживает время и обновляет состояние спящего режима.
+        /// Запускается каждую секунду и запускает очистку старых данных отслеживания.
         /// </summary>
-        /// <param name="token">Cancellation token for stopping the task</param>
+        /// <param name="token">Токен отмены для остановки задачи</param>
         private async Task CheckNightModeAsync(CancellationToken token)
         {
             while (!token.IsCancellationRequested)
@@ -138,11 +138,11 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Waits for night mode to end or for a force-run request.
-        /// Monitors console input for 'Y' key to force run during sleep mode.
+        /// Ожидает завершения ночного режима или запроса принудительного запуска.
+        /// Отслеживает ввод консоли для клавиши 'Y' для принудительного запуска во время спящего режима.
         /// </summary>
-        /// <param name="serverCts">Server cancellation token to detect shutdown</param>
-        /// <returns>Task that completes when night mode ends or force run is requested</returns>
+        /// <param name="serverCts">Токен отмены сервера для обнаружения завершения работы</param>
+        /// <returns>Задача, которая завершается, когда ночной режим заканчивается или запрошен принудительный запуск</returns>
         public async Task WaitForNightModeEndOrForceRun(CancellationTokenSource serverCts)
         {
             Console.WriteLine("[Ночной режим] Сервер спит. Нажмите 'Y' для принудительного запуска.");
@@ -167,8 +167,8 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Requests a force run during night mode sleep.
-        /// Allows server to operate normally even during night hours.
+        /// Запрашивает принудительный запуск во время спящего режима ночного режима.
+        /// Позволяет серверу работать нормально даже в ночные часы.
         /// </summary>
         public void RequestForceRun()
         {
@@ -179,27 +179,27 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Sets the night mode start hour.
+        /// Устанавливает час начала ночного режима.
         /// </summary>
-        /// <param name="hour">Hour (0-23) when night mode starts</param>
+        /// <param name="hour">Час (0-23), когда начинается ночной режим</param>
         public void SetNightStartHour(int hour)
         {
             _nightStartHour = hour;
         }
 
         /// <summary>
-        /// Sets the night mode end hour.
+        /// Устанавливает час окончания ночного режима.
         /// </summary>
-        /// <param name="hour">Hour (0-23) when night mode ends</param>
+        /// <param name="hour">Час (0-23), когда заканчивается ночной режим</param>
         public void SetNightEndHour(int hour)
         {
             _nightEndHour = hour;
         }
 
         /// <summary>
-        /// Enables or disables night mode functionality.
+        /// Включает или отключает функциональность ночного режима.
         /// </summary>
-        /// <param name="enabled">True to enable night mode, false to disable</param>
+        /// <param name="enabled">True для включения ночного режима, false для отключения</param>
         public void SetNightModeEnabled(bool enabled)
         {
             _isNightModeEnabled = enabled;
