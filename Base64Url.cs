@@ -4,17 +4,17 @@ using System.Text;
 namespace FakeSpeedTestServer
 {
     /// <summary>
-    /// Utility class for Base64URL encoding and decoding operations.
-    /// Implements RFC 4648 Section 5 (URL-safe Base64 encoding).
+    /// Вспомогательный класс для операций кодирования и декодирования Base64URL.
+    /// Реализует RFC 4648, раздел 5 (URL-безопасное кодирование Base64).
     /// </summary>
     public static class Base64Url
     {
         /// <summary>
-        /// Encodes a byte array to a Base64URL string.
-        /// Uses URL-safe characters (- instead of +, _ instead of /) and omits padding.
+        /// Кодирует массив байтов в строку Base64URL.
+        /// Использует URL-безопасные символы (- вместо +, _ вместо /) и опускает заполнение.
         /// </summary>
-        /// <param name="data">Byte array to encode</param>
-        /// <returns>Base64URL encoded string without padding</returns>
+        /// <param name="data">Массив байтов для кодирования</param>
+        /// <returns>Кодированная строка Base64URL без заполнения</returns>
         public static string Encode(byte[] data)
         {
             if (data == null)
@@ -29,10 +29,10 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Encodes a UTF-8 string to a Base64URL string.
+        /// Кодирует UTF-8 строку в строку Base64URL.
         /// </summary>
-        /// <param name="text">String to encode</param>
-        /// <returns>Base64URL encoded string without padding</returns>
+        /// <param name="text">Строка для кодирования</param>
+        /// <returns>Кодированная строка Base64URL без заполнения</returns>
         public static string Encode(string text)
         {
             if (text == null)
@@ -45,11 +45,11 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Decodes a Base64URL string to a byte array.
-        /// Handles URL-safe characters and optional padding.
+        /// Декодирует строку Base64URL в массив байтов.
+        /// Обрабатывает URL-безопасные символы и необязательное заполнение.
         /// </summary>
-        /// <param name="base64Url">Base64URL encoded string</param>
-        /// <returns>Decoded byte array</returns>
+        /// <param name="base64Url">Кодированная строка Base64URL</param>
+        /// <returns>Декодированный массив байтов</returns>
         public static byte[] DecodeToBytes(string base64Url)
         {
             if (base64Url == null)
@@ -78,10 +78,10 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Decodes a Base64URL string to a UTF-8 string.
+        /// Декодирует строку Base64URL в UTF-8 строку.
         /// </summary>
-        /// <param name="base64Url">Base64URL encoded string</param>
-        /// <returns>Decoded UTF-8 string</returns>
+        /// <param name="base64Url">Кодированная строка Base64URL</param>
+        /// <returns>Декодированная UTF-8 строка</returns>
         public static string DecodeToString(string base64Url)
         {
             byte[] data = DecodeToBytes(base64Url);
@@ -89,10 +89,10 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Validates if a string is a valid Base64URL format.
+        /// Проверяет, является ли строка допустимым форматом Base64URL.
         /// </summary>
-        /// <param name="base64Url">String to validate</param>
-        /// <returns>True if valid Base64URL format, false otherwise</returns>
+        /// <param name="base64Url">Строка для проверки</param>
+        /// <returns>True, если формат Base64URL допустим, иначе false</returns>
         public static bool IsValid(string base64Url)
         {
             if (string.IsNullOrEmpty(base64Url))

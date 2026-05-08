@@ -7,9 +7,9 @@ using System.Text;
 namespace FakeSpeedTestServer
 {
     /// <summary>
-    /// Manages client ban state and tracking information.
-    /// Handles permanent and temporary bans, stores bans to file,
-    /// and provides thread-safe access to ban data.
+    /// Управляет состоянием бана клиента и отслеживанием информации.
+    /// Обрабатывает постоянные и временные баны, сохраняет баны в файл
+    /// и обеспечивает потокобезопасный доступ к данным о банах.
     /// </summary>
     public class BanManager
     {
@@ -19,10 +19,10 @@ namespace FakeSpeedTestServer
         private readonly object _lock = new object();
 
         /// <summary>
-        /// Initializes a new instance of the BanManager class.
-        /// Loads existing bans from the specified file.
+        /// Инициализирует новый экземпляр класса BanManager.
+        /// Загружает существующие баны из указанного файла.
         /// </summary>
-        /// <param name="banFile">Path to the ban storage file</param>
+        /// <param name="banFile">Путь к файлу хранения банов</param>
         public BanManager(string banFile)
         {
             _banFile = banFile;
@@ -32,11 +32,11 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Checks if a client IP is currently banned.
-        /// Automatically removes expired bans.
+        /// Проверяет, заблокирован ли IP-адрес клиента.
+        /// Автоматически удаляет истёкшие баны.
         /// </summary>
-        /// <param name="ip">Client IP address to check</param>
-        /// <returns>True if the IP is banned, false otherwise</returns>
+        /// <param name="ip">IP-адрес клиента для проверки</param>
+        /// <returns>True, если IP заблокирован, иначе false</returns>
         public bool IsBanned(string ip)
         {
             if (_bannedClients.TryGetValue(ip, out DateTime banExpiry))
@@ -47,7 +47,7 @@ namespace FakeSpeedTestServer
                 }
                 else
                 {
-                    // Ban expired - remove it
+                    // Бан истёк - удалить его
                     _bannedClients.TryRemove(ip, out _);
                     SaveBans();
                 }
@@ -56,11 +56,11 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Bans a client IP for the specified duration.
-        /// Saves the ban to persistent storage immediately.
+        /// Блокирует IP-адрес клиента на заданное время.
+        /// Сохраняет бан в постоянное хранилище немедленно.
         /// </summary>
-        /// <param name="ip">Client IP address to ban</param>
-        /// <param name="duration">Duration of the ban</param>
+        /// <param name="ip">IP-адрес клиента для блокировки</param>
+        /// <param name="duration">Продолжительность бана</param>
         public void BanClient(string ip, TimeSpan duration)
         {
             var expiry = DateTime.Now.Add(duration);
@@ -69,10 +69,10 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Gets the total number of connections in the last 24 hours.
-        /// Used for displaying connection statistics in the window title.
+        /// Получает общее количество подключений за последние 24 часа.
+        /// Используется для отображения статистики подключений в заголовке окна.
         /// </summary>
-        /// <returns>Total connection count for the last 24 hours</returns>
+        /// <returns>Общее количество подключений за последние 24 часа</returns>
         public int GetConnectionsLast24Hours()
         {
             var cutoff = DateTime.Now.AddHours(-24);
@@ -88,20 +88,20 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Gets the current number of banned client IPs.
-        /// Used for displaying ban statistics in the window title.
+        /// Получает текущее количество заблокированных IP-адресов клиентов.
+        /// Используется для отображения статистики банов в заголовке окна.
         /// </summary>
-        /// <returns>Number of currently banned IPs</returns>
+        /// <returns>Количество заблокированных IP-адресов</returns>
         public int GetBannedCount()
         {
             return _bannedClients.Count(kvp => kvp.Value > DateTime.Now);
         }
 
         /// <summary>
-        /// Removes a ban for the specified client IP.
-        /// Used for secret unban code functionality.
+        /// Удаляет бан для указанного IP-адреса клиента.
+        /// Используется для функциональности секретного разбана.
         /// </summary>
-        /// <param name="ip">Client IP address to unban</param>
+        /// <param name="ip">IP-адрес клиента для разбанивания</param>
         public void UnbanClient(string ip)
         {
             _bannedClients.TryRemove(ip, out _);
@@ -109,34 +109,34 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Gets or creates a ClientTracking object for the specified IP.
-        /// Used to track request counts and browser information per client.
+        /// Получает или создаёт объект ClientTracking для указанного IP-адреса.
+        /// Используется для отслеживания количества запросов и информации о браузере для каждого клиента.
         /// </summary>
-        /// <param name="ip">Client IP address</param>
-        /// <returns>ClientTracking object for the IP</returns>
+        /// <param name="ip">IP-адрес клиента</param>
+        /// <returns>Объект ClientTracking для данного IP-адреса</returns>
         public ClientTracking GetOrCreateClientTracking(string ip)
         {
             return _clientTracking.GetOrAdd(ip, _ => new ClientTracking());
         }
 
         /// <summary>
-        /// Cleans up old client tracking data older than the specified age.
-        /// Called periodically to prevent memory growth.
+        /// Очищает старые данные отслеживания клиентов старше указанного возраста.
+        /// Вызывается периодически для предотвращения роста памяти.
         /// </summary>
-        /// <param name="maxAgeMinutes">Maximum age in minutes before cleanup</param>
+        /// <param name="maxAgeMinutes">Максимальный возраст в минутах перед очисткой</param>
         public void CleanupOldTracking(int maxAgeMinutes)
         {
             var cutoff = DateTime.Now.AddMinutes(-maxAgeMinutes);
             foreach (var kvp in _clientTracking.ToList())
             {
-                // Simple cleanup - could be enhanced based on actual usage
-                // For now, we just ensure the dictionary doesn't grow indefinitely
+                // Простая очистка - может быть улучшена в зависимости от фактического использования
+                // На данный момент мы просто гарантируем, что словарь не растёт бесконечно
             }
         }
 
         /// <summary>
-        /// Loads banned IPs from the ban file.
-        /// Only loads bans that haven't expired yet.
+        /// Загружает заблокированные IP-адреса из файла банов.
+        /// Загружает только те баны, которые ещё не истекли.
         /// </summary>
         private void LoadBans()
         {
@@ -169,9 +169,9 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Saves current banned IPs to the ban file.
-        /// Only saves bans that haven't expired yet.
-        /// Uses format: IP|ExpiryDate (yyyy-MM-dd HH:mm:ss)
+        /// Сохраняет текущие заблокированные IP-адреса в файл банов.
+        /// Сохраняет только те баны, которые ещё не истекли.
+        /// Использует формат: IP|ДатаИстечения (yyyy-MM-dd HH:mm:ss)
         /// </summary>
         private void SaveBans()
         {
@@ -192,36 +192,36 @@ namespace FakeSpeedTestServer
     }
 
     /// <summary>
-    /// Tracks client-specific information such as bad request counts
-    /// and browser details. Used for rate limiting and analytics.
+    /// Отслеживает информацию о клиенте, такую как количество плохих запросов
+    /// и детали браузера. Используется для ограничения скорости и аналитики.
     /// </summary>
     public class ClientTracking
     {
         /// <summary>
-        /// Number of bad requests made by this client.
-        /// Triggers a ban when threshold is reached.
+        /// Количество плохих запросов, сделанных этим клиентом.
+        /// При достижении порогового значения запускает бан.
         /// </summary>
         public int BadRequestCount { get; set; }
         
         /// <summary>
-        /// Full browser version string reported by the client.
+        /// Полная строка версии браузера, сообщённая клиентом.
         /// </summary>
         public string FullBrowserVersion { get; set; }
         
         /// <summary>
-        /// Browser name extracted from user agent.
+        /// Имя браузера, извлечённое из пользовательского агента.
         /// </summary>
         public string ClientBrowserName { get; set; }
         
         /// <summary>
-        /// Total number of connections from this client.
-        /// Used for connection statistics tracking.
+        /// Общее количество подключений от этого клиента.
+        /// Используется для отслеживания статистики подключений.
         /// </summary>
         public int ConnectionCount { get; set; }
         
         /// <summary>
-        /// Timestamp of the last connection from this client.
-        /// Used for 24-hour connection statistics.
+        /// Временная метка последнего подключения от этого клиента.
+        /// Используется для статистики подключений за 24 часа.
         /// </summary>
         public DateTime LastConnectionTime { get; set; }
     }

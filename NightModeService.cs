@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 namespace FakeSpeedTestServer
 {
     /// <summary>
-    /// Manages night mode functionality for the server.
-    /// Controls sleep/wake cycles based on configured hours (01:00-06:00 by default).
-    /// Provides thread-safe state management and force-run capability.
+    /// Управляет функциональностью ночного режима сервера.
+    /// Контролирует циклы сна/пробуждения на основе настроенных часов (по умолчанию 01:00-06:00).
+    /// Обеспечивает потокобезопасное управление состоянием и возможность принудительного запуска.
     /// </summary>
     public class NightModeService
     {
@@ -22,7 +22,7 @@ namespace FakeSpeedTestServer
         private CancellationTokenSource _cancellationTokenSource;
 
         /// <summary>
-        /// Gets a value indicating whether the server is currently in sleep mode.
+        /// Возвращает значение, указывающее, находится ли сервер в настоящее время в спящем режиме.
         /// </summary>
         public bool IsInSleepMode
         {
@@ -36,15 +36,15 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Gets a value indicating whether night mode is enabled.
+        /// Возвращает значение, указывающее, включён ли ночной режим.
         /// </summary>
         public bool IsNightModeEnabled => _isNightModeEnabled;
 
         /// <summary>
-        /// Initializes a new instance of the NightModeService class.
+        /// Инициализирует новый экземпляр класса NightModeService.
         /// </summary>
-        /// <param name="banManager">BanManager instance for cleanup operations</param>
-        /// <param name="logAction">Action to use for logging messages</param>
+        /// <param name="banManager">Экземпляр BanManager для операций очистки</param>
+        /// <param name="logAction">Действие для ведения журнала сообщений</param>
         public NightModeService(BanManager banManager, Action<string> logAction)
         {
             _banManager = banManager;
@@ -52,8 +52,8 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Starts the night mode monitoring background task.
-        /// Continuously checks time and updates sleep state accordingly.
+        /// Запускает фоновую задачу мониторинга ночного режима.
+        /// Непрерывно проверяет время и соответствующим образом обновляет состояние сна.
         /// </summary>
         public void Start()
         {
@@ -62,7 +62,7 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Stops the night mode monitoring background task.
+        /// Останавливает фоновую задачу мониторинга ночного режима.
         /// </summary>
         public void Stop()
         {
@@ -70,10 +70,10 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Checks if the current time falls within night mode hours.
-        /// Handles both same-day ranges (e.g., 1-6) and cross-midnight ranges.
+        /// Проверяет, попадает ли текущее время в часы ночного режима.
+        /// Обрабатывает как диапазоны одного дня (например, 1-6), так и диапазоны через полночь.
         /// </summary>
-        /// <returns>True if current time is within night mode hours, false otherwise</returns>
+        /// <returns>True, если текущее время находится в пределах часов ночного режима, иначе false</returns>
         private bool IsNightTime()
         {
             var now = DateTime.Now.Hour;

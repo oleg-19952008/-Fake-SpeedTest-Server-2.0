@@ -17,10 +17,10 @@ namespace FakeSpeedTestServer
     /// </summary>
     class Program
     {
-        // Global version constant
+        // Глобальная константа версии
         private const string AppVersion = "2.11.0";
         
-        // Server components
+        // Компоненты сервера
         private static BanManager banManager;
         private static NightModeService nightModeService;
         private static RequestHandler requestHandler;
@@ -28,15 +28,15 @@ namespace FakeSpeedTestServer
         private static HttpListener listener;
         private static bool isShuttingDown = false;
 
-        // Random headers
+        // Случайные заголовки
         private static List<string> randomHeaders = new List<string>();
         private static readonly object headerLock = new object();
 
-        // Suspicious user agents
+        // Подозрительные пользовательские агенты
         private static HashSet<string> suspiciousUserAgents = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private static FileSystemWatcher fileWatcher;
 
-        // Log file lock
+        // Блокировка для лог-файла
         private static readonly object logLock = new object();
         private static string currentLogFile;
 
@@ -54,18 +54,18 @@ namespace FakeSpeedTestServer
             Console.WriteLine($"=== Фейковый сервер SpeedTest v{AppVersion} ===");
             Console.WriteLine("Инициализация...");
 
-            // Initialize components
+            // Инициализация компонентов
             banManager = new BanManager("bans.ini");
             LoadSuspiciousUserAgents();
             InitializeFileWatcher();
             LoadRandomHeaders();
             CreateNewLogFile();
 
-            // Initialize night mode service
+            // Инициализация службы ночного режима
             nightModeService = new NightModeService(banManager, Log);
             nightModeService.Start();
 
-            // Initialize request handler
+            // Инициализация обработчика запросов
             requestHandler = new RequestHandler(
                 banManager,
                 nightModeService,
@@ -75,7 +75,7 @@ namespace FakeSpeedTestServer
                 Log,
                 LogErrorToFile);
 
-            // Start HTTP listener
+            // Запуск HTTP-слушателя
             listener = new HttpListener();
             listener.Prefixes.Add("http://+:5000/");
             listener.Start();
@@ -100,14 +100,14 @@ namespace FakeSpeedTestServer
                 serverCts?.Cancel();
             };
 
-            // Main loop
+            // Основной цикл
             MainLoop().GetAwaiter().GetResult();
         }
 
         /// <summary>
-        /// Main server loop that accepts and processes incoming HTTP requests.
-        /// During night mode sleep, the listener is stopped to prevent any request handling.
-        /// Updates window title with connection count every 30 seconds.
+        /// Основной цикл сервера, который принимает и обрабатывает входящие HTTP-запросы.
+        /// Во время сна в ночном режиме слушатель останавливается для предотвращения обработки любых запросов.
+        /// Обновляет заголовок окна с количеством подключений каждые 30 секунд.
         /// </summary>
         private static async Task MainLoop()
         {
@@ -116,10 +116,10 @@ namespace FakeSpeedTestServer
             
             while (!serverCts.Token.IsCancellationRequested)
             {
-                // Check night mode
+                // Проверка ночного режима
                 if (nightModeService.IsInSleepMode)
                 {
-                    // Stop listener if it's running to ensure complete silence
+                    // Остановка слушателя если он работает для обеспечения полной тишины
                     if (listenerRunning)
                     {
                         listener.Stop();
@@ -129,7 +129,7 @@ namespace FakeSpeedTestServer
                     
                     await nightModeService.WaitForNightModeEndOrForceRun(serverCts);
                     
-                    // Restart listener after waking up
+                    // Перезапуск слушателя после пробуждения
                     if (!listenerRunning && !serverCts.Token.IsCancellationRequested)
                     {
                         listener.Start();
@@ -139,7 +139,7 @@ namespace FakeSpeedTestServer
                 }
                 else
                 {
-                    // Ensure listener is running during day mode
+                    // Обеспечение работы слушателя в дневном режиме
                     if (!listenerRunning)
                     {
                         listener.Start();
@@ -147,7 +147,7 @@ namespace FakeSpeedTestServer
                     }
                 }
 
-                // Update window title with connection count and banned IPs every 30 seconds
+                // Обновление заголовка окна с количеством подключений и забаненных IP каждые 30 секунд
                 if ((DateTime.Now - lastTitleUpdate).TotalSeconds >= 30)
                 {
                     int connections = banManager.GetConnectionsLast24Hours();
@@ -167,7 +167,7 @@ namespace FakeSpeedTestServer
                 }
                 catch (Exception ex)
                 {
-                    LogErrorToFile($"Main loop error: {ex.Message}");
+                    LogErrorToFile($"Ошибка основного цикла: {ex.Message}");
                 }
             }
 
@@ -180,8 +180,8 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Loads suspicious user agents from file or uses defaults.
-        /// Monitored by FileSystemWatcher for hot reload capability.
+        /// Загружает подозрительные пользовательские агенты из файла или использует значения по умолчанию.
+        /// Отслеживается FileSystemWatcher для возможности горячей перезагрузки.
         /// </summary>
         private static void LoadSuspiciousUserAgents()
         {
@@ -219,8 +219,8 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Initializes FileSystemWatcher to monitor suspicious_agents.txt for changes.
-        /// Automatically reloads the list when the file is modified.
+        /// Инициализирует FileSystemWatcher для мониторинга изменений в suspicious_agents.txt.
+        /// Автоматически перезагружает список при изменении файла.
         /// </summary>
         private static void InitializeFileWatcher()
         {
@@ -233,7 +233,7 @@ namespace FakeSpeedTestServer
             
             fileWatcher.Changed += (sender, e) =>
             {
-                // Debounce - wait 100ms before reloading
+                // Защита от дребезга - ожидание 100 мс перед перезагрузкой
                 Thread.Sleep(100);
                 Console.WriteLine("Перезагрузка suspicious_agents.txt...");
                 LoadSuspiciousUserAgents();
@@ -245,7 +245,7 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Loads random headers from file for X-Powered-By response header randomization.
+        /// Загружает случайные заголовки из файла для рандомизации заголовка ответа X-Powered-By.
         /// </summary>
         private static void LoadRandomHeaders()
         {
@@ -280,23 +280,23 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Creates a new log file with timestamp in dd-MM-yyyy format.
-        /// Called at server startup to begin logging session.
+        /// Создаёт новый лог-файл с меткой времени в формате dd-MM-yyyy.
+        /// Вызывается при запуске сервера для начала сеанса логирования.
         /// </summary>
         private static void CreateNewLogFile()
         {
             var timestamp = DateTime.Now.ToString("dd-MM-yyyy_HH-mm-ss");
             currentLogFile = $"server_log_{timestamp}.txt";
             
-            // Create empty log file with header
+            // Создание пустого лог-файла с заголовком
             File.WriteAllText(currentLogFile, $"=== Журнал запущен {DateTime.Now:dd-MM-yyyy HH:mm:ss} ===\r\n", Encoding.UTF8);
         }
 
         /// <summary>
-        /// Logs an informational message to console and current log file.
-        /// Thread-safe using lock on logLock object.
+        /// Записывает информационное сообщение в консоль и текущий лог-файл.
+        /// Потокобезопасно с использованием блокировки logLock.
         /// </summary>
-        /// <param name="message">Message to log</param>
+        /// <param name="message">Сообщение для записи в лог</param>
         private static void Log(string message)
         {
             var timestamp = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");
@@ -318,10 +318,10 @@ namespace FakeSpeedTestServer
         }
 
         /// <summary>
-        /// Logs an error message to console and current log file.
-        /// Thread-safe using lock on logLock object.
+        /// Записывает сообщение об ошибке в консоль и текущий лог-файл.
+        /// Потокобезопасно с использованием блокировки logLock.
         /// </summary>
-        /// <param name="message">Error message to log</param>
+        /// <param name="message">Сообщение об ошибке для записи в лог</param>
         private static void LogErrorToFile(string message)
         {
             var timestamp = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");

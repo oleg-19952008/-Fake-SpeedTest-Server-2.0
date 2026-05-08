@@ -11,7 +11,7 @@ function startDownload() {
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = 'Скачивание файла ' + sizeMB + ' МБ...';
     
-    // Log the download attempt to console for debugging
+    // Журналирование попытки скачивания в консоль для отладки
     console.log('Starting download: ' + sizeMB + ' MB');
     
     window.location.href = '/download/' + sizeMB;
@@ -23,9 +23,9 @@ function setAndDownload(sizeMB) {
     startDownload();
 }
 
-// Get browser info using Client Hints and fetch IP from server
+// Получение информации о браузере с помощью Client Hints и запрос IP-адреса с сервера
 function loadBrowserInfo() {
-    // First get basic browser info
+    // Сначала получаем базовую информацию о браузере
     var basicInfo = '';
     if (navigator.userAgentData) {
         navigator.userAgentData.getHighEntropyValues(['platform', 'platformVersion', 'architecture', 'model', 'uaFullVersion']).then(function(info) {
@@ -45,7 +45,7 @@ function loadBrowserInfo() {
 }
 
 function updateBrowserInfoDisplay(basicInfo) {
-    // Fetch IP address from server
+    // Запрос IP-адреса с сервера
     fetch('/updateBrowserInfo')
         .then(function(response) { return response.json(); })
         .then(function(data) {
@@ -54,25 +54,25 @@ function updateBrowserInfoDisplay(basicInfo) {
         })
         .catch(function(error) {
             console.error('Error fetching IP:', error);
-            // Still show basic info even if IP fetch fails
+            // Всё равно показываем базовую информацию, даже если запрос IP не удался
         });
 }
 
-// Load browser info on page load
+// Загрузка информации о браузере при загрузке страницы
 loadBrowserInfo();
 
-// Theme toggle functionality with auto-detect system preference
+// Функциональность переключения темы с автоматическим определением системной предпочтительной темы
 (function() {
     var themeToggle = document.getElementById('themeToggle');
     var body = document.body;
     
-    // Function to update button icon based on current theme
+    // Функция обновления иконки кнопки в зависимости от текущей темы
     function updateThemeIcon(isDark) {
         themeToggle.textContent = isDark ? '☀️' : '🌙';
         themeToggle.setAttribute('title', isDark ? 'Переключить на светлую тему' : 'Переключить на тёмную тему');
     }
     
-    // Function to apply theme
+    // Функция применения темы
     function applyTheme(theme) {
         body.classList.remove('light-theme', 'dark-theme');
         body.classList.add(theme + '-theme');
@@ -80,40 +80,40 @@ loadBrowserInfo();
         updateThemeIcon(theme === 'dark');
     }
     
-    // Check for saved theme or auto-detect system preference
+    // Проверка сохранённой темы или автоматическое определение системной предпочтительной темы
     var savedTheme = localStorage.getItem('theme');
     
     if (savedTheme) {
-        // Use saved theme
+        // Использование сохранённой темы
         applyTheme(savedTheme);
     } else {
-        // Auto-detect system theme preference
+        // Автоматическое определение системной предпочтительной темы
         var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         applyTheme(prefersDark ? 'dark' : 'light');
     }
     
-    // Listen for system theme changes
+    // Прослушивание изменений системной темы
     if (window.matchMedia) {
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
-            // Only auto-switch if user hasn't manually set a preference
+            // Автоматическое переключение только если пользователь не установил предпочтения вручную
             if (!localStorage.getItem('theme')) {
                 applyTheme(e.matches ? 'dark' : 'light');
             }
         });
     }
     
-    // Toggle theme on button click
+    // Переключение темы по клику на кнопку
     themeToggle.addEventListener('click', function() {
         var isCurrentlyDark = body.classList.contains('dark-theme');
         applyTheme(isCurrentlyDark ? 'light' : 'dark');
     });
 })();
 
-// Measure ping using 3 sequential fetch requests with 10ms delay between each and calculate jitter
+// Измерение пинга с помощью 3 последовательных fetch-запросов с задержкой 10 мс между каждым и расчёт джиттера
 async function measurePing() {
     var measurements = [];
     
-    // Perform 3 sequential requests with 10ms delay between each
+    // Выполнение 3 последовательных запросов с задержкой 10 мс между каждым
     for (var i = 0; i < 3; i++) {
         var startTime = performance.now();
         try {
@@ -124,21 +124,21 @@ async function measurePing() {
             console.error('Ping request failed:', error);
         }
         
-        // Add 10ms delay between requests (except after the last one)
+        // Добавление задержки 10 мс между запросами (кроме последнего)
         if (i < 2) {
             await new Promise(function(resolve) { setTimeout(resolve, 10); });
         }
     }
     
-    // Return null if we have no measurements
+    // Возврат null если нет измерений
     if (measurements.length === 0) {
         return null;
     }
     
-    // Sort measurements to find median
+    // Сортировка измерений для нахождения медианы
     measurements.sort(function(a, b) { return a - b; });
     
-    // Calculate median
+    // Вычисление медианы
     var mid = Math.floor(measurements.length / 2);
     var median;
     if (measurements.length % 2 === 0) {
@@ -147,7 +147,7 @@ async function measurePing() {
         median = measurements[mid];
     }
     
-    // Calculate jitter (standard deviation of measurements)
+    // Вычисление джиттера (стандартное отклонение измерений)
     var sum = 0;
     for (var j = 0; j < measurements.length; j++) {
         sum += measurements[j];
@@ -169,19 +169,19 @@ async function measurePing() {
     };
 }
 
-// Start ping measurement and display result with anti-spam protection (2 second cooldown)
+// Запуск измерения пинга и отображение результата с защитой от спама (задержка 2 секунды)
 var lastPingMeasurementTime = 0;
 var isMeasuringPing = false;
 
 async function startPingMeasurement() {
     var resultDiv = document.getElementById('pingResult');
     
-    // Check if already measuring
+    // Проверка уже идёт ли измерение
     if (isMeasuringPing) {
         return;
     }
     
-    // Check cooldown (2 seconds)
+    // Проверка задержки (2 секунды)
     var currentTime = Date.now();
     var timeSinceLastMeasurement = currentTime - lastPingMeasurementTime;
     if (timeSinceLastMeasurement < 2000 && lastPingMeasurementTime !== 0) {
