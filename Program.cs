@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 namespace FakeSpeedTestServer
 {
     /// <summary>
-    /// Main entry point for the Fake SpeedTest Server application.
-    /// Orchestrates all server components including ban management, night mode,
-    /// request handling, logging, and configuration loading.
+    /// Главный входной пункт приложения Fake SpeedTest Server.
+    /// Организует все компоненты сервера, включая управление банами, ночной режим,
+    /// обработку запросов, ведение журнала и загрузку конфигурации.
     /// </summary>
     class Program
     {
@@ -41,10 +41,10 @@ namespace FakeSpeedTestServer
         private static string currentLogFile;
 
         /// <summary>
-        /// Main entry point of the application.
-        /// Initializes all components and starts the HTTP server.
+        /// Главная точка входа приложения.
+        /// Инициализирует все компоненты и запускает HTTP-сервер.
         /// </summary>
-        /// <param name="args">Command line arguments (not used)</param>
+        /// <param name="args">Аргументы командной строки (не используются)</param>
         static void Main(string[] args)
         {
             // Устанавливаем кодировку для корректного отображения кириллицы в Windows консоли

@@ -26,7 +26,7 @@ async function getClientIP() {
         return data.ip;
     } catch (error) {
         console.error('Error getting client IP:', error);
-        // Fallback - пытаемся получить через сторонний сервис
+        // Резервный вариант - пытаемся получить через сторонний сервис
         try {
             const response = await fetch('https://api.ipify.org?format=json');
             if (!response.ok) throw new Error('Failed to get IP from ipify');
@@ -78,9 +78,9 @@ async function unbanIP() {
         return;
     }
     
-    // Валидация IP адреса
+    // Валидация IP-адреса
     if (!isValidIP(ip)) {
-        showMessage('Некорректный формат IP адреса', 'error');
+        showMessage('Некорректный формат IP-адреса', 'error');
         return;
     }
     
@@ -101,7 +101,7 @@ async function unbanIP() {
             showMessage(`Ошибка: ${result.message || 'Не удалось снять бан'}`, 'error');
         }
     } catch (error) {
-        console.error('Error unbanning IP:', error);
+        console.error('Ошибка снятия бана с IP:', error);
         showMessage('Ошибка соединения с сервером', 'error');
     }
 }
@@ -113,13 +113,13 @@ async function banIP() {
     const ip = ipToBanInput.value.trim();
     
     if (!ip) {
-        showMessage('Введите IP адрес', 'error');
+        showMessage('Введите IP-адрес', 'error');
         return;
     }
     
-    // Валидация IP адреса
+    // Валидация IP-адреса
     if (!isValidIP(ip)) {
-        showMessage('Некорректный формат IP адреса', 'error');
+        showMessage('Некорректный формат IP-адреса', 'error');
         return;
     }
     
@@ -143,13 +143,13 @@ async function banIP() {
             showMessage(`Ошибка: ${result.message || 'Не удалось заблокировать'}`, 'error');
         }
     } catch (error) {
-        console.error('Error banning IP:', error);
+        console.error('Ошибка блокировки IP:', error);
         showMessage('Ошибка соединения с сервером', 'error');
     }
 }
 
 /**
- * Проверяет корректность IP адреса
+ * Проверяет корректность IP-адреса
  */
 function isValidIP(ip) {
     const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;

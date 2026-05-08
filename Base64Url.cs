@@ -24,7 +24,7 @@ namespace FakeSpeedTestServer
 
             string base64 = Convert.ToBase64String(data);
             
-            // Convert to URL-safe format: replace '+' with '-', '/' with '_', and remove padding '='
+            // Преобразование в URL-безопасный формат: замена '+' на '-', '/' на '_' и удаление заполнения '='
             return base64.Replace('+', '-').Replace('/', '_').TrimEnd('=');
         }
 
@@ -59,11 +59,11 @@ namespace FakeSpeedTestServer
 
             string base64 = base64Url.Replace('-', '+').Replace('_', '/');
             
-            // Add padding if necessary
+            // Добавление заполнения при необходимости
             switch (base64.Length % 4)
             {
                 case 0:
-                    break; // No padding needed
+                    break; // Заполнение не требуется
                 case 2:
                     base64 += "==";
                     break;
@@ -71,7 +71,7 @@ namespace FakeSpeedTestServer
                     base64 += "=";
                     break;
                 default:
-                    throw new FormatException("Invalid Base64URL string");
+                    throw new FormatException("Недопустимая строка Base64URL");
             }
 
             return Convert.FromBase64String(base64);
@@ -100,7 +100,7 @@ namespace FakeSpeedTestServer
                 return false;
             }
 
-            // Check for valid Base64URL characters (A-Z, a-z, 0-9, -, _)
+            // Проверка допустимых символов Base64URL (A-Z, a-z, 0-9, -, _)
             foreach (char c in base64Url)
             {
                 if (!((c >= 'A' && c <= 'Z') || 

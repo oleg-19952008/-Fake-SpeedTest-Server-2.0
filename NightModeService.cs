@@ -123,7 +123,7 @@ namespace FakeSpeedTestServer
                         }
                     }
 
-                    // Cleanup old tracking every minute
+                    // Очистка старых данных отслеживания каждую минуту
                     _banManager.CleanupOldTracking(60);
                 }
                 catch (OperationCanceledException)

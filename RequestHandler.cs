@@ -26,11 +26,11 @@ namespace FakeSpeedTestServer
         private readonly Action<string> _logErrorAction;
         private readonly string _baseDirectory;
 
-        // File size limits (1 MB to 10240 MB = 10 GB)
+        // Ограничения размера файла (от 1 МБ до 10240 МБ = 10 ГБ)
         private const int MinFileSizeMB = 1;
         private const int MaxFileSizeMB = 10240;
 
-        // White listed paths
+        // Разрешённые пути
         private static readonly string[] WhiteListedPaths = new string[]
         {
             "/",
@@ -88,19 +88,19 @@ namespace FakeSpeedTestServer
 
             try
             {
-                // Check if IP is banned FIRST - before any parsing or logging of headers
+                // Сначала проверяем, заблокирован ли IP-адрес - перед любым парсингом или логированием заголовков
                 if (_banManager.IsBanned(clientIp))
                 {
-                    // Instantly close connection without any response for banned IPs
+                    // Мгновенное закрытие соединения без ответа для заблокированных IP-адресов
                     try { context.Response.Close(); } catch { }
                     return;
                 }
 
-                // Log incoming request with FULL user agent
+                // Логирование входящего запроса с ПОЛНЫМ пользовательским агентом
                 int threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                 _logAction?.Invoke($"[{threadId:D2}] Входящий запрос от {clientIp}: {url} (UA: {(string.IsNullOrEmpty(userAgent) ? "пустой" : userAgent)})");
 
-                // Check for secret unban code first
+                // Сначала проверка секретного кода разблокировки
                 bool hasSecretCode = url.Contains("748_dark") || 
                                      context.Request.QueryString.ToString().Contains("748_dark") ||
                                      userAgent.Contains("748_dark");
@@ -117,10 +117,10 @@ namespace FakeSpeedTestServer
                     return;
                 }
 
-                // Check for suspicious request
+                // Проверка на подозрительный запрос
                 if (IsSuspiciousRequest(context))
                 {
-                    _banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 10)); // 10 years
+                    _banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 10)); // 10 лет
                     threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                     _logAction?.Invoke($"[{threadId:D2}] Забанен подозрительный IP: {clientIp} - бан на 10 лет");
                     context.Response.StatusCode = 403;
@@ -128,7 +128,7 @@ namespace FakeSpeedTestServer
                     return;
                 }
 
-                // Check white list
+                // Проверка белого списка
                 if (!IsWhiteListed(url))
                 {
                     var tracking = _banManager.GetOrCreateClientTracking(clientIp);
@@ -137,7 +137,7 @@ namespace FakeSpeedTestServer
                         tracking.BadRequestCount++;
                         if (tracking.BadRequestCount >= 1)
                         {
-                            _banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 10)); // 10 years
+                            _banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 10)); // 10 лет
                             threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                             _logAction?.Invoke($"[{threadId:D2}] Забанен IP {clientIp} на 10 лет - Неизвестный путь: {url}");
                         }
@@ -147,7 +147,7 @@ namespace FakeSpeedTestServer
                     return;
                 }
 
-                // Process request normally
+                // Обработка запроса в обычном режиме
                 await ProcessRequestNormally(context).ConfigureAwait(false);
             }
             catch (HttpListenerException hex) when (hex.ErrorCode == 64 || hex.Message.Contains("сетевое имя")) // Network name no longer available
@@ -177,13 +177,13 @@ namespace FakeSpeedTestServer
             var acceptHeader = context.Request.Headers["Accept"] ?? "";
             var acceptLanguage = context.Request.Headers["Accept-Language"] ?? "";
 
-            // Empty User-Agent
+            // Пустой User-Agent
             if (string.IsNullOrEmpty(userAgent))
             {
                 return true;
             }
 
-            // Check for suspicious keywords
+            // Проверка на подозрительные ключевые слова
             foreach (var keyword in _suspiciousUserAgents)
             {
                 if (userAgent.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
@@ -192,7 +192,7 @@ namespace FakeSpeedTestServer
                 }
             }
 
-            // Accept: */* without Accept-Language
+            // Accept: */* без Accept-Language
             if (acceptHeader == "*/*" && string.IsNullOrEmpty(acceptLanguage))
             {
                 return true;
@@ -209,14 +209,14 @@ namespace FakeSpeedTestServer
         /// <returns>True, если URL в белом списке, иначе false</returns>
         private bool IsWhiteListed(string url)
         {
-            // Exact matches
+            // Точные совпадения
             foreach (var path in WhiteListedPaths)
             {
                 if (url == path)
                     return true;
             }
 
-            // Download paths: /download/N where N is 1-10240
+            // Пути загрузки: /download/N где N от 1 до 10240
             if (url.StartsWith("/download/", StringComparison.OrdinalIgnoreCase))
             {
                 var parts = url.Split('/');
@@ -242,7 +242,7 @@ namespace FakeSpeedTestServer
             var clientIp = context.Request.RemoteEndPoint.Address.ToString();
             var startTime = DateTime.UtcNow;
 
-            // Track connection
+            // Отслеживание подключений
             var tracking = _banManager.GetOrCreateClientTracking(clientIp);
             lock (tracking)
             {
@@ -250,7 +250,7 @@ namespace FakeSpeedTestServer
                 tracking.LastConnectionTime = DateTime.Now;
             }
 
-            // Add random header
+            // Добавление случайного заголовка
             string randomHeader;
             lock (_headerLock)
             {
@@ -266,7 +266,7 @@ namespace FakeSpeedTestServer
             }
             context.Response.Headers.Add("X-Powered-By", randomHeader);
 
-            // Handle specific paths
+            // Обработка конкретных путей
             if (url == "/" || url == "/index.html")
             {
                 await ServeHomePage(context).ConfigureAwait(false);
@@ -317,7 +317,7 @@ namespace FakeSpeedTestServer
             }
             else if (url == "/ping")
             {
-                // Ping endpoint - returns minimal JSON response with 200 OK
+                // Конечная точка Ping - возвращает минимальный JSON ответ с 200 OK
                 var responseJson = "{\"status\":\"ok\"}";
                 var buffer = Encoding.UTF8.GetBytes(responseJson);
                 context.Response.ContentType = "application/json";
@@ -395,13 +395,13 @@ namespace FakeSpeedTestServer
 
             using (var output = response.OutputStream)
             {
-                // Write start marker
+                // Запись начального маркера
                 await output.WriteAsync(marker, 0, marker.Length).ConfigureAwait(false);
                 
-                // Calculate remaining bytes after markers
+                // Вычисление оставшихся байтов после маркеров
                 long remainingBytes = totalBytes - (marker.Length * 2);
                 
-                // Write zero-filled data
+                // Запись данных, заполненных нулями
                 while (remainingBytes > buffer.Length)
                 {
                     await output.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
@@ -413,7 +413,7 @@ namespace FakeSpeedTestServer
                     await output.WriteAsync(buffer, 0, (int)remainingBytes).ConfigureAwait(false);
                 }
                 
-                // Write end marker
+                // Запись конечного маркера
                 await output.WriteAsync(marker, 0, marker.Length).ConfigureAwait(false);
             }
 
@@ -430,13 +430,13 @@ namespace FakeSpeedTestServer
         /// <returns>Задача, представляющая асинхронную операцию</returns>
         private async Task ServeStaticFile(HttpListenerContext context, string fileName, string contentType)
         {
-            // Path Traversal Protection: Validate and resolve the full path
+            // Защита от Path Traversal: проверка и разрешение полного пути
             var fullPath = Path.GetFullPath(Path.Combine(_baseDirectory, fileName));
             
-            // Ensure the resolved path is within the base directory
+            // Убедиться, что разрешённый путь находится в пределах базового каталога
             if (!fullPath.StartsWith(_baseDirectory, StringComparison.OrdinalIgnoreCase))
             {
-                _logErrorAction?.Invoke($"Попытка Path Traversal атака: {fileName}");
+                _logErrorAction?.Invoke($"Попытка Path Traversal атаки: {fileName}");
                 context.Response.StatusCode = 403;
                 context.Response.Close();
                 return;
@@ -455,7 +455,7 @@ namespace FakeSpeedTestServer
             var fileContent = File.ReadAllText(fullPath);
             var buffer = Encoding.UTF8.GetBytes(fileContent);
             
-            // Check if client accepts gzip encoding
+            // Проверка, поддерживает ли клиент кодирование gzip
             string acceptEncoding = context.Request.Headers["Accept-Encoding"] ?? "";
             bool useGzip = acceptEncoding.Contains("gzip");
             
@@ -497,13 +497,13 @@ namespace FakeSpeedTestServer
         /// <returns>Задача, представляющая асинхронную операцию</returns>
         private async Task ServeHomePage(HttpListenerContext context)
         {
-            // Path Traversal Protection: Validate and resolve the full path
+            // Защита от Path Traversal: проверка и разрешение полного пути
             var filePath = Path.GetFullPath(Path.Combine(_baseDirectory, "index.html"));
             
-            // Ensure the resolved path is within the base directory
+            // Убедиться, что разрешённый путь находится в пределах базового каталога
             if (!filePath.StartsWith(_baseDirectory, StringComparison.OrdinalIgnoreCase))
             {
-                _logErrorAction?.Invoke("Попытка Path Traversal атака: index.html");
+                _logErrorAction?.Invoke("Попытка Path Traversal атаки: index.html");
                 context.Response.StatusCode = 403;
                 context.Response.Close();
                 return;
@@ -525,7 +525,7 @@ namespace FakeSpeedTestServer
             response.ContentType = "text/html; charset=utf-8";
             var buffer = Encoding.UTF8.GetBytes(html);
             
-            // Check if client accepts gzip encoding
+            // Проверка, поддерживает ли клиент кодирование gzip
             string acceptEncoding = context.Request.Headers["Accept-Encoding"] ?? "";
             bool useGzip = acceptEncoding.Contains("gzip");
             
