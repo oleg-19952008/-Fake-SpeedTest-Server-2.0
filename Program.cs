@@ -62,8 +62,7 @@ namespace FakeSpeedTestServer
             CreateNewLogFile();
 
             // Инициализация службы ночного режима
-            nightModeService = new NightModeService(banManager, Log);
-            nightModeService.Start();
+            nightModeService = new NightModeService();
 
             // Инициализация обработчика запросов
             requestHandler = new RequestHandler(
@@ -101,50 +100,36 @@ namespace FakeSpeedTestServer
             };
 
             // Основной цикл
-            MainLoop().GetAwaiter().GetResult();
+            MainLoop();
         }
 
         /// <summary>
         /// Основной цикл сервера, который принимает и обрабатывает входящие HTTP-запросы.
-        /// Во время сна в ночном режиме слушатель останавливается для предотвращения обработки любых запросов.
-        /// Обновляет заголовок окна с количеством подключений каждые 30 секунд.
+        /// Работает в одном потоке, проверяя нажатие кнопки и время.
         /// </summary>
-        private static async Task MainLoop()
+        private static void MainLoop()
         {
             var lastTitleUpdate = DateTime.MinValue;
-            bool listenerRunning = true;
             
             while (!serverCts.Token.IsCancellationRequested)
             {
-                // Проверка ночного режима
-                if (nightModeService.IsInSleepMode)
+                // Проверка ночного режима и кнопки принудительного запуска
+                if (nightModeService.IsNightModeEnabled && nightModeService.IsNightTime() && !nightModeService.IsForceRunRequested)
                 {
-                    // Остановка слушателя если он работает для обеспечения полной тишины
-                    if (listenerRunning)
+                    // Ночной режим активен - проверяем кнопку 'Y' для принудительного запуска
+                    if (Console.KeyAvailable)
                     {
-                        listener.Stop();
-                        listenerRunning = false;
-                        Console.WriteLine("[Ночной режим] Слушатель остановлен. Сервер спит.");
+                        var key = Console.ReadKey(true);
+                        if (key.Key == ConsoleKey.Y)
+                        {
+                            nightModeService.RequestForceRun();
+                            Console.WriteLine("[Ночной режим] Запрошен принудительный запуск!");
+                        }
                     }
                     
-                    await nightModeService.WaitForNightModeEndOrForceRun(serverCts);
-                    
-                    // Перезапуск слушателя после пробуждения
-                    if (!listenerRunning && !serverCts.Token.IsCancellationRequested)
-                    {
-                        listener.Start();
-                        listenerRunning = true;
-                        Console.WriteLine("[Ночной режим] Слушатель запущен. Сервер проснулся.");
-                    }
-                }
-                else
-                {
-                    // Обеспечение работы слушателя в дневном режиме
-                    if (!listenerRunning)
-                    {
-                        listener.Start();
-                        listenerRunning = true;
-                    }
+                    // Небольшая пауза чтобы не нагружать CPU
+                    Thread.Sleep(100);
+                    continue;
                 }
 
                 // Обновление заголовка окна с количеством подключений и забаненных IP каждые 30 секунд
@@ -158,12 +143,8 @@ namespace FakeSpeedTestServer
 
                 try
                 {
-                    var context = await listener.GetContextAsync().ConfigureAwait(false);
+                    var context = listener.GetContext();
                     _ = requestHandler.HandleRequestAsync(context);
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
                 }
                 catch (Exception ex)
                 {
@@ -174,7 +155,6 @@ namespace FakeSpeedTestServer
             listener.Stop();
             listener.Close();
             fileWatcher?.Dispose();
-            nightModeService?.Stop();
             Console.WriteLine("Сервер остановлен.");
             Log("Сервер остановлен");
         }
