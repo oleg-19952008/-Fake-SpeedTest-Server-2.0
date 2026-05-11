@@ -61,8 +61,9 @@ namespace FakeSpeedTestServer
             LoadRandomHeaders();
             CreateNewLogFile();
 
-            // Инициализация службы ночного режима (без запуска отдельного потока)
-            nightModeService = new NightModeService();
+            // Инициализация службы ночного режима
+            nightModeService = new NightModeService(banManager, Log);
+            nightModeService.Start();
 
             // Инициализация обработчика запросов
             requestHandler = new RequestHandler(
@@ -99,78 +100,51 @@ namespace FakeSpeedTestServer
                 serverCts?.Cancel();
             };
 
-            // Основной цикл - единственный поток управления
-            MainLoop();
+            // Основной цикл
+            MainLoop().GetAwaiter().GetResult();
         }
 
         /// <summary>
-        /// Основной цикл сервера в одном потоке.
-        /// Проверяет время и кнопку, управляет ночным режимом.
-        /// В ночном режиме останавливает слушатель и прерывает все активные подключения.
+        /// Основной цикл сервера, который принимает и обрабатывает входящие HTTP-запросы.
+        /// Во время сна в ночном режиме слушатель останавливается для предотвращения обработки любых запросов.
+        /// Обновляет заголовок окна с количеством подключений каждые 30 секунд.
         /// </summary>
-        private static void MainLoop()
+        private static async Task MainLoop()
         {
             var lastTitleUpdate = DateTime.MinValue;
             bool listenerRunning = true;
-            bool wasInSleepMode = false;
             
             while (!serverCts.Token.IsCancellationRequested)
             {
                 // Проверка ночного режима
-                bool isNightTime = nightModeService.IsNightModeEnabled && nightModeService.IsNightTime();
-                bool forceRunRequested = false;
-                
-                // Проверка кнопки 'Y' для принудительного включения
-                if (Console.KeyAvailable)
+                if (nightModeService.IsInSleepMode)
                 {
-                    var key = Console.ReadKey(true);
-                    if (key.Key == ConsoleKey.Y)
-                    {
-                        nightModeService.RequestForceRun();
-                        forceRunRequested = true;
-                        Console.WriteLine("[Ночной режим] Запрошен принудительный запуск!");
-                    }
-                }
-                
-                bool shouldSleep = isNightTime && !forceRunRequested && !nightModeService.IsInSleepMode;
-                bool shouldWake = !isNightTime && nightModeService.IsInSleepMode;
-                
-                // Вход в спящий режим
-                if (shouldSleep)
-                {
-                    nightModeService.EnterSleepMode();
-                    
-                    // Остановка слушателя
+                    // Остановка слушателя если он работает для обеспечения полной тишины
                     if (listenerRunning)
                     {
                         listener.Stop();
                         listenerRunning = false;
                         Console.WriteLine("[Ночной режим] Слушатель остановлен. Сервер спит.");
-                        Log("Ночной режим: слушатель остановлен");
                     }
-                }
-                
-                // Выход из спящего режима
-                if (shouldWake)
-                {
-                    nightModeService.ResetSleepState();
                     
-                    // Перезапуск слушателя
-                    if (!listenerRunning)
+                    await nightModeService.WaitForNightModeEndOrForceRun(serverCts);
+                    
+                    // Перезапуск слушателя после пробуждения
+                    if (!listenerRunning && !serverCts.Token.IsCancellationRequested)
                     {
                         listener.Start();
                         listenerRunning = true;
                         Console.WriteLine("[Ночной режим] Слушатель запущен. Сервер проснулся.");
-                        Log("Ночной режим: слушатель запущен");
                     }
                 }
-                
-                // Если в спящем режиме - ждем
-                if (nightModeService.IsInSleepMode)
+                else
                 {
-                    // Небольшая пауза для экономии CPU
-                    Thread.Sleep(500);
-                    continue;
+                    // Обеспечение работы слушателя в дневном режиме
+                    if (!listenerRunning)
+                    {
+                        listener.Start();
+                        listenerRunning = true;
+                    }
                 }
 
                 // Обновление заголовка окна с количеством подключений и забаненных IP каждые 30 секунд
@@ -184,37 +158,23 @@ namespace FakeSpeedTestServer
 
                 try
                 {
-                    // Асинхронное получение контекста без блокировки основного потока
-                    var contextTask = listener.GetContextAsync();
-                    
-                    // Ждем с возможностью отмены
-                    if (contextTask.Wait(100, serverCts.Token))
-                    {
-                        var context = contextTask.Result;
-                        _ = requestHandler.HandleRequestAsync(context);
-                    }
+                    var context = await listener.GetContextAsync().ConfigureAwait(false);
+                    _ = requestHandler.HandleRequestAsync(context);
                 }
                 catch (OperationCanceledException)
                 {
                     break;
                 }
-                catch (AggregateException ae) when (ae.InnerException is OperationCanceledException)
-                {
-                    break;
-                }
                 catch (Exception ex)
                 {
-                    // Listener может быть остановлен во время ночного режима
-                    if (listenerRunning)
-                    {
-                        LogErrorToFile($"Ошибка основного цикла: {ex.Message}");
-                    }
+                    LogErrorToFile($"Ошибка основного цикла: {ex.Message}");
                 }
             }
 
             listener.Stop();
             listener.Close();
             fileWatcher?.Dispose();
+            nightModeService?.Stop();
             Console.WriteLine("Сервер остановлен.");
             Log("Сервер остановлен");
         }
