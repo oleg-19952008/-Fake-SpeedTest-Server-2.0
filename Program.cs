@@ -273,7 +273,7 @@ namespace FakeSpeedTestServer
             var timestamp = DateTime.Now.ToString("dd-MM-yyyy_HH-mm-ss");
             currentLogFile = $"server_log_{timestamp}.txt";
             
-            // Создание пустого лог-файла с заголовком
+            // Создание пустого лог-файла с заголовком (используем UTF-8)
             File.WriteAllText(currentLogFile, $"=== Журнал запущен {DateTime.Now:dd-MM-yyyy HH:mm:ss} ===\r\n", Encoding.UTF8);
         }
 

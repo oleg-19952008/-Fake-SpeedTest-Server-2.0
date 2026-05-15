@@ -14,6 +14,8 @@ namespace FakeSpeedTestServer
         private readonly TextWriter _consoleWriter;
         private readonly string _logFilePath;
         private readonly object _writeLock = new object();
+        private static readonly Encoding FileEncoding = Encoding.UTF8;
+        private static readonly Encoding ConsoleEncoding = Encoding.GetEncoding(866);
 
         /// <summary>
         /// Инициализирует новый экземпляр класса ConsoleAndFileWriter.
@@ -28,7 +30,7 @@ namespace FakeSpeedTestServer
         /// <summary>
         /// Возвращает кодировку UTF-8 для корректного отображения кириллицы.
         /// </summary>
-        public override Encoding Encoding => Encoding.GetEncoding(866);
+        public override Encoding Encoding => ConsoleEncoding;
 
         /// <summary>
         /// Записывает символ в консоль и файл логов.
@@ -38,7 +40,7 @@ namespace FakeSpeedTestServer
             lock (_writeLock)
             {
                 _consoleWriter.Write(value);
-                File.AppendAllText(_logFilePath, value.ToString(), Encoding);
+                File.AppendAllText(_logFilePath, value.ToString(), FileEncoding);
             }
         }
 
@@ -50,7 +52,7 @@ namespace FakeSpeedTestServer
             lock (_writeLock)
             {
                 _consoleWriter.Write(value);
-                File.AppendAllText(_logFilePath, value, Encoding);
+                File.AppendAllText(_logFilePath, value, FileEncoding);
             }
         }
 
@@ -65,7 +67,7 @@ namespace FakeSpeedTestServer
                 var logEntry = $"[{timestamp}] {value}";
                 
                 _consoleWriter.WriteLine(logEntry);
-                File.AppendAllText(_logFilePath, logEntry + Environment.NewLine, Encoding);
+                File.AppendAllText(_logFilePath, logEntry + Environment.NewLine, FileEncoding);
             }
         }
 
