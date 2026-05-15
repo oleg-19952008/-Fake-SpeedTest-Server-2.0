@@ -172,6 +172,7 @@ async function measurePing() {
 // Запуск измерения пинга и отображение результата с защитой от спама (задержка 2 секунды)
 var lastPingMeasurementTime = 0;
 var isMeasuringPing = false;
+var pingWaitTimer = null;
 
 async function startPingMeasurement() {
     var resultDiv = document.getElementById('pingResult');
@@ -186,8 +187,41 @@ async function startPingMeasurement() {
     var timeSinceLastMeasurement = currentTime - lastPingMeasurementTime;
     if (timeSinceLastMeasurement < 2000 && lastPingMeasurementTime !== 0) {
         resultDiv.style.display = 'block';
-        resultDiv.innerHTML = 'Подождите ' + Math.ceil((2000 - timeSinceLastMeasurement) / 1000) + ' сек...';
+        
+        // Очистка предыдущего таймера если есть
+        if (pingWaitTimer) {
+            clearInterval(pingWaitTimer);
+        }
+        
+        // Функция обновления сообщения ожидания
+        function updateWaitMessage() {
+            var currentTime = Date.now();
+            var timeSinceLastMeasurement = currentTime - lastPingMeasurementTime;
+            var remainingTime = 2000 - timeSinceLastMeasurement;
+            
+            if (remainingTime <= 0) {
+                resultDiv.innerHTML = 'Измерить пинг';
+                if (pingWaitTimer) {
+                    clearInterval(pingWaitTimer);
+                    pingWaitTimer = null;
+                }
+            } else {
+                resultDiv.innerHTML = 'Подождите ' + Math.ceil(remainingTime / 1000) + ' сек...';
+            }
+        }
+        
+        // Первоначальное отображение
+        updateWaitMessage();
+        
+        // Обновление сообщения каждую секунду
+        pingWaitTimer = setInterval(updateWaitMessage, 500);
         return;
+    }
+    
+    // Очистка таймера ожидания если он был
+    if (pingWaitTimer) {
+        clearInterval(pingWaitTimer);
+        pingWaitTimer = null;
     }
     
     isMeasuringPing = true;
