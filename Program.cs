@@ -18,7 +18,7 @@ namespace FakeSpeedTestServer
     class Program
     {
         // Глобальная константа версии
-        private const string AppVersion = "2.13.0";
+        private const string AppVersion = "2.13.1";
         
         // Компоненты сервера
         private static BanManager banManager;
@@ -47,6 +47,7 @@ namespace FakeSpeedTestServer
         /// <param name="args">Аргументы командной строки (не используются)</param>
         static void Main(string[] args)
         {
+            Console.Clear();
             // Создаем файл логов до установки переопределения Console.Out
             CreateNewLogFile();
 
@@ -76,9 +77,7 @@ namespace FakeSpeedTestServer
                 nightModeService,
                 randomHeaders,
                 headerLock,
-                suspiciousUserAgents,
-                Log,
-                LogErrorToFile);
+                suspiciousUserAgents);
 
             // Запуск HTTP-слушателя
             listener = new HttpListener();
@@ -154,7 +153,7 @@ namespace FakeSpeedTestServer
                 }
                 catch (Exception ex)
                 {
-                    LogErrorToFile($"Ошибка основного цикла: {ex.Message}");
+                    Console.WriteLine($"Ошибка основного цикла: {ex.Message}");
                 }
             }
 
@@ -200,7 +199,7 @@ namespace FakeSpeedTestServer
             }
             catch (Exception ex)
             {
-                LogErrorToFile($"Ошибка загрузки подозрительных агентов: {ex.Message}");
+                Console.WriteLine($"Ошибка загрузки подозрительных агентов: {ex.Message}");
             }
         }
 
@@ -261,7 +260,7 @@ namespace FakeSpeedTestServer
             }
             catch (Exception ex)
             {
-                LogErrorToFile($"Ошибка загрузки случайных заголовков: {ex.Message}");
+                Console.WriteLine($"Ошибка загрузки случайных заголовков: {ex.Message}");
             }
         }
 
@@ -286,16 +285,6 @@ namespace FakeSpeedTestServer
         private static void Log(string message)
         {
             Console.WriteLine(message);
-        }
-
-        /// <summary>
-        /// Записывает сообщение об ошибке в консоль и текущий лог-файл.
-        /// Использует переопределенный Console.WriteLine, поэтому пишет только уникальное сообщение без дублирования временной метки.
-        /// </summary>
-        /// <param name="message">Сообщение об ошибке для записи в лог</param>
-        private static void LogErrorToFile(string message)
-        {
-            Console.WriteLine($"ОШИБКА: {message}");
         }
     }
 }

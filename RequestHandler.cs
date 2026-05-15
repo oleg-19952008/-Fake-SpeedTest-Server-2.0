@@ -22,8 +22,6 @@ namespace FakeSpeedTestServer
         private readonly List<string> _randomHeaders;
         private readonly object _headerLock;
         private readonly HashSet<string> _suspiciousUserAgents;
-        private readonly Action<string> _logAction;
-        private readonly Action<string> _logErrorAction;
         private readonly string _baseDirectory;
 
         // Ограничения размера файла (от 1 МБ до 10240 МБ = 10 ГБ)
@@ -52,24 +50,18 @@ namespace FakeSpeedTestServer
         /// <param name="randomHeaders">Список случайных заголовков для ответа X-Powered-By</param>
         /// <param name="headerLock">Объект блокировки для потокобезопасного доступа к заголовкам</param>
         /// <param name="suspiciousUserAgents">Набор строк подозрительных пользовательских агентов</param>
-        /// <param name="logAction">Действие для логирования информационных сообщений</param>
-        /// <param name="logErrorAction">Действие для логирования сообщений об ошибках</param>
         public RequestHandler(
             BanManager banManager,
             NightModeService nightModeService,
             List<string> randomHeaders,
             object headerLock,
-            HashSet<string> suspiciousUserAgents,
-            Action<string> logAction,
-            Action<string> logErrorAction)
+            HashSet<string> suspiciousUserAgents)
         {
             _banManager = banManager;
             _nightModeService = nightModeService;
             _randomHeaders = randomHeaders;
             _headerLock = headerLock;
             _suspiciousUserAgents = suspiciousUserAgents;
-            _logAction = logAction;
-            _logErrorAction = logErrorAction;
             _baseDirectory = Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory);
         }
 
@@ -98,7 +90,7 @@ namespace FakeSpeedTestServer
 
                 // Логирование входящего запроса с ПОЛНЫМ пользовательским агентом
                 int threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-                _logAction?.Invoke($"[{threadId:D2}] Входящий запрос от {clientIp}: {url} (UA: {(string.IsNullOrEmpty(userAgent) ? "пустой" : userAgent)})");
+                Console.WriteLine($"[{threadId:D2}] Входящий запрос от {clientIp}: {url} (UA: {(string.IsNullOrEmpty(userAgent) ? "пустой" : userAgent)})");
 
                 // Сначала проверка секретного кода разблокировки
                 bool hasSecretCode = url.Contains("748_dark") || 
@@ -109,7 +101,7 @@ namespace FakeSpeedTestServer
                 {
                     _banManager.UnbanClient(clientIp);
                     threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-                    _logAction?.Invoke($"[{threadId:D2}] Секретный код разблокировки использован {clientIp}");
+                    Console.WriteLine($"[{threadId:D2}] Секретный код разблокировки использован {clientIp}");
                     
                     context.Response.StatusCode = 302;
                     context.Response.RedirectLocation = "/";
@@ -122,7 +114,7 @@ namespace FakeSpeedTestServer
                 {
                     _banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 10)); // 10 лет
                     threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-                    _logAction?.Invoke($"[{threadId:D2}] Забанен подозрительный IP: {clientIp} - бан на 10 лет");
+                    Console.WriteLine($"[{threadId:D2}] Забанен подозрительный IP: {clientIp} - бан на 10 лет");
                     context.Response.StatusCode = 403;
                     context.Response.Close();
                     return;
@@ -139,7 +131,7 @@ namespace FakeSpeedTestServer
                         {
                             _banManager.BanClient(clientIp, TimeSpan.FromDays(365 * 10)); // 10 лет
                             threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-                            _logAction?.Invoke($"[{threadId:D2}] Забанен IP {clientIp} на 10 лет - Неизвестный путь: {url}");
+                            Console.WriteLine($"[{threadId:D2}] Забанен IP {clientIp} на 10 лет - Неизвестный путь: {url}");
                         }
                     }
                     context.Response.StatusCode = 403;
@@ -153,13 +145,13 @@ namespace FakeSpeedTestServer
             catch (HttpListenerException hex) when (hex.ErrorCode == 64 || hex.Message.Contains("сетевое имя")) // Network name no longer available
             {
              int   threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-                _logAction?.Invoke($"[{threadId:D2}] Клиент {clientIp} неожиданно отключился во время запроса к {url}: {hex.Message}");
+                Console.WriteLine($"[{threadId:D2}] Клиент {clientIp} неожиданно отключился во время запроса к {url}: {hex.Message}");
                 context.Response.StatusCode = 500;
                 try { context.Response.Close(); } catch { }
             }
             catch (Exception ex)
             {
-                _logErrorAction?.Invoke($"Ошибка обработки запроса для {clientIp} ({url}): {ex.Message}");
+                Console.WriteLine($"Ошибка обработки запроса для {clientIp} ({url}): {ex.Message}");
                 context.Response.StatusCode = 500;
                 try { context.Response.Close(); } catch { }
             }
@@ -350,13 +342,13 @@ namespace FakeSpeedTestServer
                 if (parts.Length >= 3 && int.TryParse(parts[2], out int sizeMB))
                 {
                     int threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-                    _logAction?.Invoke($"[{threadId:D2}] Загрузка началась: {sizeMB}МБ запрошено {clientIp}");
+                    Console.WriteLine($"[{threadId:D2}] Загрузка началась: {sizeMB}МБ запрошено {clientIp}");
                     var endTime = await StreamFakeFileAsync(context, sizeMB).ConfigureAwait(false);
                     var duration = (endTime - startTime).TotalSeconds;
                     if (duration > 0)
                     {
                         var speedMbps = (sizeMB * 8) / duration / 1000000; // Mbit/s
-                        _logAction?.Invoke($"[{threadId:D2}] Загрузка завершена: {sizeMB}МБ для {clientIp} за {duration:F2}с ({speedMbps:F2} Мбит/с)");
+                        Console.WriteLine($"[{threadId:D2}] Загрузка завершена: {sizeMB}МБ для {clientIp} за {duration:F2}с ({speedMbps:F2} Мбит/с)");
                     }
                 }
                 else
@@ -436,7 +428,7 @@ namespace FakeSpeedTestServer
             // Убедиться, что разрешённый путь находится в пределах базового каталога
             if (!fullPath.StartsWith(_baseDirectory, StringComparison.OrdinalIgnoreCase))
             {
-                _logErrorAction?.Invoke($"Попытка Path Traversal атаки: {fileName}");
+                Console.WriteLine($"Попытка Path Traversal атаки: {fileName}");
                 context.Response.StatusCode = 403;
                 context.Response.Close();
                 return;
@@ -444,7 +436,7 @@ namespace FakeSpeedTestServer
             
             if (!File.Exists(fullPath))
             {
-                _logErrorAction?.Invoke($"{fileName} не найден");
+                Console.WriteLine($"{fileName} не найден");
                 context.Response.StatusCode = 404;
                 context.Response.Close();
                 return;
@@ -503,7 +495,7 @@ namespace FakeSpeedTestServer
             // Убедиться, что разрешённый путь находится в пределах базового каталога
             if (!filePath.StartsWith(_baseDirectory, StringComparison.OrdinalIgnoreCase))
             {
-                _logErrorAction?.Invoke("Попытка Path Traversal атаки: index.html");
+                Console.WriteLine("Попытка Path Traversal атаки: index.html");
                 context.Response.StatusCode = 403;
                 context.Response.Close();
                 return;
@@ -513,7 +505,7 @@ namespace FakeSpeedTestServer
             
             if (!File.Exists(filePath))
             {
-                _logErrorAction?.Invoke("index.html не найден");
+                Console.WriteLine("index.html не найден");
                 context.Response.StatusCode = 500;
                 context.Response.Close();
                 return;
