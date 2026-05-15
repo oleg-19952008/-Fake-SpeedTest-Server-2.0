@@ -36,8 +36,8 @@ namespace FakeSpeedTestServer
         private static HashSet<string> suspiciousUserAgents = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private static FileSystemWatcher fileWatcher;
 
-        // Блокировка для лог-файла
-        private static readonly object logLock = new object();
+        // Пользовательский вывод в консоль и файл
+        private static ConsoleAndFileWriter consoleAndFileWriter;
         private static string currentLogFile;
 
         /// <summary>
@@ -47,10 +47,17 @@ namespace FakeSpeedTestServer
         /// <param name="args">Аргументы командной строки (не используются)</param>
         static void Main(string[] args)
         {
+            // Создаем файл логов до установки переопределения Console.Out
+            CreateNewLogFile();
+
             // Устанавливаем кодировку для корректного отображения кириллицы в Windows консоли
             Console.OutputEncoding = Encoding.GetEncoding(866);
             Console.InputEncoding = Encoding.GetEncoding(866);
             
+            // Переопределяем вывод консоли для записи одновременно в консоль и файл логов
+            consoleAndFileWriter = new ConsoleAndFileWriter(currentLogFile);
+            Console.SetOut(consoleAndFileWriter);
+
             Console.WriteLine($"=== Фейковый сервер SpeedTest v{AppVersion} ===");
             Console.WriteLine("Инициализация...");
 
@@ -59,7 +66,6 @@ namespace FakeSpeedTestServer
             LoadSuspiciousUserAgents();
             InitializeFileWatcher();
             LoadRandomHeaders();
-            CreateNewLogFile();
 
             // Инициализация службы ночного режима
             nightModeService = new NightModeService();
@@ -274,52 +280,22 @@ namespace FakeSpeedTestServer
 
         /// <summary>
         /// Записывает информационное сообщение в консоль и текущий лог-файл.
-        /// Потокобезопасно с использованием блокировки logLock.
+        /// Использует переопределенный Console.WriteLine, поэтому пишет только уникальное сообщение без дублирования временной метки.
         /// </summary>
         /// <param name="message">Сообщение для записи в лог</param>
         private static void Log(string message)
         {
-            var timestamp = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");
-            var logEntry = $"[{timestamp}] {message}";
-            
-            Console.WriteLine(logEntry);
-            
-            lock (logLock)
-            {
-                try
-                {
-                    File.AppendAllText(currentLogFile, logEntry + "\r\n", Encoding.UTF8);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Ошибка записи в журнал: {ex.Message}");
-                }
-            }
+            Console.WriteLine(message);
         }
 
         /// <summary>
         /// Записывает сообщение об ошибке в консоль и текущий лог-файл.
-        /// Потокобезопасно с использованием блокировки logLock.
+        /// Использует переопределенный Console.WriteLine, поэтому пишет только уникальное сообщение без дублирования временной метки.
         /// </summary>
         /// <param name="message">Сообщение об ошибке для записи в лог</param>
         private static void LogErrorToFile(string message)
         {
-            var timestamp = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");
-            var logEntry = $"[{timestamp}] ОШИБКА: {message}";
-            
-            Console.WriteLine(logEntry);
-            
-            lock (logLock)
-            {
-                try
-                {
-                    File.AppendAllText(currentLogFile, logEntry + "\r\n", Encoding.UTF8);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Ошибка записи ошибки в журнал: {ex.Message}");
-                }
-            }
+            Console.WriteLine($"ОШИБКА: {message}");
         }
     }
 }
