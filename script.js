@@ -200,11 +200,12 @@ async function startPingMeasurement() {
             var remainingTime = 2000 - timeSinceLastMeasurement;
             
             if (remainingTime <= 0) {
-                resultDiv.style.display = 'none';
                 if (pingWaitTimer) {
                     clearInterval(pingWaitTimer);
                     pingWaitTimer = null;
                 }
+                // Автоматический запуск измерения после истечения времени ожидания
+                startPingMeasurement();
             } else {
                 resultDiv.style.display = 'block';
                 resultDiv.innerHTML = 'Подождите ' + Math.ceil(remainingTime / 1000) + ' сек...';
