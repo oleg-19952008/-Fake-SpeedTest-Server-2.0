@@ -200,12 +200,13 @@ async function startPingMeasurement() {
             var remainingTime = 2000 - timeSinceLastMeasurement;
             
             if (remainingTime <= 0) {
-                resultDiv.innerHTML = 'Измерить пинг';
+                resultDiv.style.display = 'none';
                 if (pingWaitTimer) {
                     clearInterval(pingWaitTimer);
                     pingWaitTimer = null;
                 }
             } else {
+                resultDiv.style.display = 'block';
                 resultDiv.innerHTML = 'Подождите ' + Math.ceil(remainingTime / 1000) + ' сек...';
             }
         }
