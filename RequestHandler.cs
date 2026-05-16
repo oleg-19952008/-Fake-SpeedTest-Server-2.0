@@ -80,6 +80,16 @@ namespace FakeSpeedTestServer
 
             try
             {
+                // Проверка ночного режима - отклоняем запросы если ночной режим активен
+                if (_nightModeService.IsNightModeEnabled && 
+                    _nightModeService.IsNightTime() && 
+                    !_nightModeService.IsForceRunRequested)
+                {
+                    // Просто закрываем соединение без ответа
+                    try { context.Response.Close(); } catch { }
+                    return;
+                }
+
                 // Сначала проверяем, заблокирован ли IP-адрес - перед любым парсингом или логированием заголовков
                 if (_banManager.IsBanned(clientIp))
                 {

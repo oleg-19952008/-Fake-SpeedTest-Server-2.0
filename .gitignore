@@ -1,119 +1,140 @@
-```gitignore
-# Build artifacts
-*.exe
-*.dll
-*.pdb
-*.exe.config
-bin/
-obj/
-Debug/
-Release/
-x64/
-x86/
-*.user
-*.userosscache
-*.suo
-*.userprefs
-*.cache
-*.log
-*.tmp
-*.temp
-*.compiled
-*.nupkg
-*.snupkg
-packages/
-.vs/
-.vscode/
-.idea/
-*.swp
-*.swo
-.DS_Store
-Thumbs.db
-
-# Environment
-.env
-.env.local
-.env.*
-!.env.example
-
+```
 # Dependencies
 node_modules/
-vendor/
-lib/
-packages/
-.npm/
-bower_components/
 
-# Testing
-coverage/
-htmlcov/
-.coverage
-*.coverage
+# Build artifacts
+dist/
+build/
+target/
 
-# Python specific (if applicable)
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.py.class
 .Python
-*.so
-.PyInstaller/
+env/
+venv/
+.venv/
+.ENV
+.env
+.env.*
+.env.local
+.python-version
+.venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.tmp
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
 .pytest_cache/
-.mypy_cache/
-.tox/
-.eggs/
-*.egg-info/
-dist/
+
+# Distribution / packaging
+.Python
 build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
 *.egg
 
-# Java specific (if applicable)
-target/
-.gradle/
-*.class
+# Environment variables
+.env
+.env.local
+.env.*
+
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+
+# Executables
+*.exe
+*.dll
+*.so
+*.a
+*.o
+*.obj
+*.out
+*.app
+*.bin
 *.jar
 *.war
-*.ear
-*.iml
-*.ipr
-*.iws
+*.class
+*.nib
+*.plst
+*.db
+*.db-journal
 
-# Node.js specific (if applicable)
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-node_modules/
-jspm_packages/
-typings/
-.nyc_output/
-coverage/
-*.lcov
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
 
-# C# specific
-[Bb]in/
-[Oo]bj/
-*.user
-*.userosscache
-*.suo
-*.userprefs
-*.cache
-*.compiled
-*.nupkg
-*.snupkg
-[._]*.sln
-[._]*.csproj
-[._]*.vbproj
-[._]*.vcxproj
-[._]*.vcproj
-[._]*.dbmdl
-[._]*.dbproj.schemaview
-[._]*.pfx
-[._]*.publishsettings
-[._]*.scc
-[._]*.vssscc
-[._]*.vspscc
-[._]*.DotSettings.user
-[._]*.lay
-[._]*.VC.db
-[._]*.VC.VC.opendb
+# Gradle
+.gradle/
+build/
+
+# Temporary files
+*.tmp
+*~
+.DS_Store
+Thumbs.db
 ```
