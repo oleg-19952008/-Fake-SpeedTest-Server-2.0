@@ -13,6 +13,8 @@ namespace FakeSpeedTestServer
         private volatile bool _isNightModeEnabled = true;
         private int _nightStartHour = 1; // 01:00
         private int _nightEndHour = 6;   // 06:00
+        private bool _wasNightTime = false;
+        private bool _wasForceRunRequested = false;
 
         /// <summary>
         /// Возвращает значение, указывающее, включён ли ночной режим.
@@ -21,25 +23,66 @@ namespace FakeSpeedTestServer
 
         /// <summary>
         /// Проверяет, попадает ли текущее время в часы ночного режима.
+        /// Логирует переход в ночной режим и выход из него.
         /// </summary>
         /// <returns>True, если текущее время находится в пределах часов ночного режима, иначе false</returns>
         public bool IsNightTime()
         {
             var now = DateTime.Now.Hour;
+            bool isCurrentlyNightTime;
+            
             if (_nightStartHour < _nightEndHour)
             {
-                return now >= _nightStartHour && now < _nightEndHour;
+                isCurrentlyNightTime = now >= _nightStartHour && now < _nightEndHour;
             }
             else
             {
-                return now >= _nightStartHour || now < _nightEndHour;
+                isCurrentlyNightTime = now >= _nightStartHour || now < _nightEndHour;
             }
+
+            // Логирование перехода в ночной режим и выхода из него
+            if (_isNightModeEnabled && isCurrentlyNightTime != _wasNightTime)
+            {
+                int threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                if (isCurrentlyNightTime)
+                {
+                    Console.WriteLine($"[{threadId:D2}] Ночной режим ВКЛЮЧЁН");
+                }
+                else
+                {
+                    Console.WriteLine($"[{threadId:D2}] Ночной режим ВЫКЛЮЧЕН");
+                }
+                _wasNightTime = isCurrentlyNightTime;
+            }
+
+            return isCurrentlyNightTime;
         }
 
         /// <summary>
         /// Проверяет, был ли запрошен принудительный запуск.
+        /// Логирует изменение состояния принудительного запуска.
         /// </summary>
-        public bool IsForceRunRequested => _isForceRunRequested;
+        public bool IsForceRunRequested
+        {
+            get
+            {
+                bool current = _isForceRunRequested;
+                if (current != _wasForceRunRequested)
+                {
+                    int threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                    if (current)
+                    {
+                        Console.WriteLine($"[{threadId:D2}] Принудительный запуск АКТИВИРОВАН");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[{threadId:D2}] Принудительный запуск СБРОШЕН");
+                    }
+                    _wasForceRunRequested = current;
+                }
+                return current;
+            }
+        }
 
         /// <summary>
         /// Запрашивает принудительный запуск во время ночного режима.

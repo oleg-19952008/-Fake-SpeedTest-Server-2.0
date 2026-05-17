@@ -1,85 +1,45 @@
-```
+# Compiled and build artifacts
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
 # Dependencies
 node_modules/
-
-# Build artifacts
-dist/
-build/
-target/
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.py.class
-.Python
-env/
 venv/
 .venv/
-.ENV
-.env
-.env.*
-.env.local
-.python-version
-.venv.bak/
-pip-log.txt
-pip-delete-this-directory.txt
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+target/
+.gradle/
 
-# Logs
+# Logs and temp files
 *.log
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
+*.tmp
 *.swp
 *.swo
-*~
-*.tmp
 
-# Coverage reports
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Coverage
 coverage/
 htmlcov/
 .coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Environment variables
-.env
-.env.local
-.env.*
 
 # Compressed files
 *.zip
@@ -104,37 +64,3 @@ wheels/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
-
-# Executables
-*.exe
-*.dll
-*.so
-*.a
-*.o
-*.obj
-*.out
-*.app
-*.bin
-*.jar
-*.war
-*.class
-*.nib
-*.plst
-*.db
-*.db-journal
-
-# MyPy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Gradle
-.gradle/
-build/
-
-# Temporary files
-*.tmp
-*~
-.DS_Store
-Thumbs.db
-```
